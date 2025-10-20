@@ -1,0 +1,88 @@
+{
+    "languages": {
+        "en": "English",
+        "zh-CN": "简体中文",
+        "zh-TW": "繁體中文"
+    },
+    "buttons": {
+        "save": "儲存",
+        "cancel": "取消",
+        "delete": "刪除",
+        "edit": "編輯",
+        "create": "建立",
+        "submit": "提交",
+        "loading": "載入中...",
+        "retry": "重試"
+    },
+    "common": {
+        "yes": "是",
+        "no": "否",
+        "ok": "確定",
+        "error": "錯誤",
+        "success": "成功",
+        "warning": "警告",
+        "info": "資訊"
+    },
+    "messages": {
+        "success": "操作成功完成",
+        "error": "發生了錯誤",
+        "loading": "正在載入，請稍候...",
+        "noData": "暫無資料",
+        "confirmDelete": "確定要刪除此項目嗎？",
+        "saved": "儲存成功",
+        "deleted": "刪除成功"
+    },
+    "notifications": {
+        "title": "通知",
+        "clear": "清空",
+        "markAllAsRead": "全部已讀",
+        "allRead": "全部已讀",
+        "newImageGenerated": "新圖片生成"
+    },
+    "navigation": {
+        "home": "首頁",
+        "canvas": "畫布",
+        "settings": "設定",
+        "back": "返回"
+    },
+    "dialog": {
+        "confirmTitle": "確認操作",
+        "confirmDescription": "此操作無法復原",
+        "cancel": "取消",
+        "confirm": "確認"
+    },
+    "update": {
+        "title": "🎉 新版本可用",
+        "description": "發現新版本 v{{version}}，是否立即安裝更新？",
+        "installNote": "點擊「安裝更新」將重啟應用程式並安裝。",
+        "laterButton": "稍後提醒",
+        "installButton": "安裝更新",
+        "installing": "正在安裝..."
+    },
+    "auth": {
+        "login": "登入",
+        "logout": "登出",
+        "loginToJaaz": "登入到 Jaaz",
+        "myAccount": "我的帳戶",
+        "loginDescription": "登入後可以使用雲端 AI 模型",
+        "startLogin": "開始登入",
+        "preparingLogin": "準備登入中...",
+        "cancel": "取消",
+        "loginSuccessMessage": "登入成功！",
+        "authExpiredMessage": "授權已過期，請重新登入",
+        "authErrorMessage": "檢查授權狀態時發生錯誤",
+        "waitingForBrowser": "等待瀏覽器中完成登入...",
+        "pollErrorMessage": "檢查登入狀態失敗，請重試",
+        "preparingLoginMessage": "正在準備登入...",
+        "browserLoginMessage": "請在瀏覽器中完成登入",
+        "loginRequestFailed": "登入請求失敗，請重試",
+        "logoutSuccessMessage": "已成功登出",
+        "notLoggedIn": "未登入",
+        "balance": "餘額",
+        "recharge": "儲值"
+    },
+    "socket": {
+        "connectionError": "連線錯誤 ({{current}}/{{max}}): {{error}}",
+        "maxRetriesReached": "連線失敗，請重啟應用程式重試"
+    }
+}

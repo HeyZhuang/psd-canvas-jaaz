@@ -1,0 +1,57 @@
+{
+    "newChat": "新增聊天",
+    "placeholder": "在這裡輸入你的訊息...",
+    "insufficientBalance": "餘額不足",
+    "insufficientBalanceDescription": "您的積分已用完，請儲值後繼續使用",
+    "textarea": {
+        "placeholder": "輸入您的設計需求",
+        "selectModel": "請選擇一個文字模型！如果您還沒有設定 API 金鑰，請前往設定頁面進行設定。",
+        "selectTool": "請選擇一個圖片模型！如果您還沒有設定 API 金鑰，請前往設定頁面進行設定。",
+        "enterPrompt": "請輸入提示內容",
+        "quantity": "生成數量"
+    },
+    "messages": {
+        "imagePositioning": "定位到圖片",
+        "showMore": "顯示更多",
+        "showLess": "收起"
+    },
+    "thinking": {
+        "title": "思考過程"
+    },
+    "plan": {
+        "title": "計劃",
+        "steps": {
+            "singular": "步驟",
+            "plural": "步驟"
+        }
+    },
+    "single_select_mode": "單選模式",
+    "shareTemplate": {
+        "title": "分享為範本",
+        "templateName": "範本名稱",
+        "templateNamePlaceholder": "輸入範本名稱...",
+        "coverPhoto": "封面圖片",
+        "noImagesFound": "畫布中沒有找到圖片",
+        "nameRequired": "範本名稱是必填項目",
+        "coverImageRequired": "封面圖片是必填項目",
+        "create": "建立範本",
+        "creating": "建立中...",
+        "success": "範本建立成功！",
+        "error": "建立範本失敗"
+    },
+    "toolCall": {
+        "requiresConfirmation": "需確認",
+        "cancelled": "已取消",
+        "confirm": "確認執行",
+        "cancel": "取消"
+    },
+    "modelSelector": {
+        "title": "模型",
+        "auto": "自動",
+        "tabs": {
+            "image": "圖像",
+            "video": "影片",
+            "text": "文字"
+        }
+    }
+}

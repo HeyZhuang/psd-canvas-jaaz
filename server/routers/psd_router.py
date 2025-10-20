@@ -1,0 +1,568 @@
+from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.concurrency import run_in_threadpool
+from psd_tools import PSDImage
+from PIL import Image
+from io import BytesIO
+import os
+import json
+from typing import List, Dict, Any, Optional
+from common import DEFAULT_PORT
+from tools.utils.image_canvas_utils import generate_file_id
+from services.config_service import FILES_DIR
+
+router = APIRouter(prefix="/api/psd")
+
+# PSD文件存储目录
+PSD_DIR = os.path.join(FILES_DIR, "psd")
+os.makedirs(PSD_DIR, exist_ok=True)
+
+
+@router.post("/upload")
+async def upload_psd(file: UploadFile = File(...)):
+    """
+    上传PSD文件并解析其图层结构
+    
+    Returns:
+        {
+            "file_id": str,
+            "url": str,
+            "width": int,
+            "height": int,
+            "layers": List[Dict],  # 图层信息列表
+            "thumbnail_url": str
+        }
+    """
+    print(f'🎨 Uploading PSD file: {file.filename}')
+    
+    # 验证文件类型
+    if not file.filename or not file.filename.lower().endswith('.psd'):
+        raise HTTPException(status_code=400, detail="File must be a PSD file")
+    
+    # 生成文件ID
+    file_id = generate_file_id()
+    
+    try:
+        # 读取文件内容
+        content = await file.read()
+        
+        # 保存原始PSD文件
+        psd_path = os.path.join(PSD_DIR, f'{file_id}.psd')
+        with open(psd_path, 'wb') as f:
+            f.write(content)
+        
+        # 解析PSD文件
+        psd = PSDImage.open(BytesIO(content))
+        width, height = psd.width, psd.height
+        
+        # 提取图层信息
+        layers_info = await run_in_threadpool(_extract_layers_info, psd, file_id)
+        
+        # 生成缩略图
+        thumbnail_url = await run_in_threadpool(_generate_thumbnail, psd, file_id)
+        
+        # 保存图层元数据
+        metadata_path = os.path.join(PSD_DIR, f'{file_id}_metadata.json')
+        with open(metadata_path, 'w', encoding='utf-8') as f:
+            json.dump({
+                'width': width,
+                'height': height,
+                'layers': layers_info,
+                'original_filename': file.filename
+            }, f, ensure_ascii=False, indent=2)
+        
+        return {
+            'file_id': file_id,
+            'url': f'http://localhost:{DEFAULT_PORT}/api/psd/file/{file_id}',
+            'width': width,
+            'height': height,
+            'layers': layers_info,
+            'thumbnail_url': thumbnail_url
+        }
+        
+    except Exception as e:
+        print(f'❌ Error processing PSD: {e}')
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error processing PSD file: {str(e)}")
+
+
+@router.get("/file/{file_id}")
+async def get_psd_file(file_id: str):
+    """获取原始PSD文件"""
+    file_path = os.path.join(PSD_DIR, f'{file_id}.psd')
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="PSD file not found")
+    return FileResponse(file_path)
+
+
+@router.get("/composite/{file_id}")
+async def get_psd_composite(file_id: str):
+    """获取PSD合成后的图像"""
+    try:
+        psd_path = os.path.join(PSD_DIR, f'{file_id}.psd')
+        if not os.path.exists(psd_path):
+            raise HTTPException(status_code=404, detail="PSD file not found")
+        
+        # 加载PSD并合成
+        psd = PSDImage.open(psd_path)
+        merged_image = psd.composite()
+        
+        # 保存合成图像
+        composite_path = os.path.join(PSD_DIR, f'{file_id}_composite.png')
+        merged_image.save(composite_path, format='PNG')
+        
+        return FileResponse(composite_path)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating composite: {str(e)}")
+
+
+@router.get("/metadata/{file_id}")
+async def get_psd_metadata(file_id: str):
+    """获取PSD文件的元数据"""
+    metadata_path = os.path.join(PSD_DIR, f'{file_id}_metadata.json')
+    if not os.path.exists(metadata_path):
+        raise HTTPException(status_code=404, detail="PSD metadata not found")
+    
+    with open(metadata_path, 'r', encoding='utf-8') as f:
+        metadata = json.load(f)
+    return metadata
+
+
+@router.get("/layer/{file_id}/{layer_index}")
+async def get_layer_image(file_id: str, layer_index: int):
+    """
+    获取指定图层的图像
+    
+    Args:
+        file_id: PSD文件ID
+        layer_index: 图层索引
+    """
+    layer_path = os.path.join(PSD_DIR, f'{file_id}_layer_{layer_index}.png')
+    if not os.path.exists(layer_path):
+        raise HTTPException(status_code=404, detail="Layer image not found")
+    return FileResponse(layer_path)
+
+
+@router.post("/update_layer/{file_id}/{layer_index}")
+async def update_layer(file_id: str, layer_index: int, file: UploadFile = File(...)):
+    """
+    更新指定图层的图像
+    
+    Args:
+        file_id: PSD文件ID
+        layer_index: 图层索引
+        file: 新的图层图像
+    """
+    try:
+        # 读取新图像
+        content = await file.read()
+        img = Image.open(BytesIO(content))
+        
+        # 保存更新后的图层
+        layer_path = os.path.join(PSD_DIR, f'{file_id}_layer_{layer_index}.png')
+        await run_in_threadpool(img.save, layer_path, format='PNG')
+        
+        return {
+            'success': True,
+            'layer_url': f'http://localhost:{DEFAULT_PORT}/api/psd/layer/{file_id}/{layer_index}'
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating layer: {str(e)}")
+
+
+@router.post("/export/{file_id}")
+async def export_psd(file_id: str, format: str = "png"):
+    """
+    导出合成后的图像
+    
+    Args:
+        file_id: PSD文件ID
+        format: 导出格式 (png, jpg)
+    
+    Returns:
+        导出的图像文件
+    """
+    try:
+        psd_path = os.path.join(PSD_DIR, f'{file_id}.psd')
+        if not os.path.exists(psd_path):
+            raise HTTPException(status_code=404, detail="PSD file not found")
+        
+        # 加载PSD并合成
+        psd = PSDImage.open(psd_path)
+        merged_image = psd.composite()
+        
+        # 导出为指定格式
+        export_id = generate_file_id()
+        ext = format.lower()
+        export_path = os.path.join(FILES_DIR, f'{export_id}.{ext}')
+        
+        if ext == 'jpg' or ext == 'jpeg':
+            merged_image = merged_image.convert('RGB')
+            await run_in_threadpool(merged_image.save, export_path, format='JPEG', quality=95)
+        else:
+            await run_in_threadpool(merged_image.save, export_path, format='PNG')
+        
+        return {
+            'export_id': f'{export_id}.{ext}',
+            'url': f'http://localhost:{DEFAULT_PORT}/api/file/{export_id}.{ext}'
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error exporting PSD: {str(e)}")
+
+
+def _extract_layers_info(psd: PSDImage, file_id: str) -> List[Dict[str, Any]]:
+    """
+    提取所有图层（含群组內子层、文字层）的信息並保存圖層圖像。
+    - 對所有非群組圖層輸出 image_url（含文字層轉為位圖）。
+    - 保留父子層關係（parent_index）。
+    """
+    layers_info: List[Dict[str, Any]] = []
+
+    current_index = 0
+
+    def next_index() -> int:
+        nonlocal current_index
+        idx = current_index
+        current_index += 1
+        print(f'🔢 分配圖層索引: {idx}')
+        return idx
+
+    def process_layer_recursive(layer, parent_index: Optional[int] = None) -> int:
+        idx = next_index()
+        layer_name = getattr(layer, 'name', f'Layer {idx}')
+
+        layer_type = 'group' if layer.is_group() else 'layer'
+        # 檢測文字層（psd-tools: layer.kind == 'type'）
+        if hasattr(layer, 'kind') and getattr(layer, 'kind', None) == 'type':
+            layer_type = 'text'
+
+        print(f'📋 處理圖層 {idx}: "{layer_name}" (類型: {layer_type}, 父層: {parent_index})')
+
+        layer_info: Dict[str, Any] = {
+            'index': idx,
+            'name': layer_name,
+            'visible': getattr(layer, 'visible', True),
+            'opacity': getattr(layer, 'opacity', 255),
+            'blend_mode': str(getattr(layer, 'blend_mode', 'normal')),
+            'left': getattr(layer, 'left', 0),
+            'top': getattr(layer, 'top', 0),
+            'width': getattr(layer, 'width', 0),
+            'height': getattr(layer, 'height', 0),
+            'parent_index': parent_index,
+            'type': layer_type,
+        }
+
+        # 文字層屬性（若存在）
+        if layer_type == 'text' and hasattr(layer, 'text_data'):
+            text_data = layer.text_data
+            layer_info.update({
+                'font_family': getattr(text_data, 'font_name', 'Arial'),
+                'font_size': getattr(text_data, 'font_size', 16),
+                'font_weight': getattr(text_data, 'font_weight', 'normal'),
+                'font_style': getattr(text_data, 'font_style', 'normal'),
+                'text_align': getattr(text_data, 'text_align', 'left'),
+                'text_color': getattr(text_data, 'text_color', '#000000'),
+                'text_content': getattr(text_data, 'text_content', ''),
+                'line_height': getattr(text_data, 'line_height', 1.2),
+                'letter_spacing': getattr(text_data, 'letter_spacing', 0),
+                'text_decoration': getattr(text_data, 'text_decoration', 'none'),
+            })
+
+        # 為所有圖層（包含群組）嘗試輸出合成位圖
+        try:
+            # 一律強制臨時可見以便輸出位圖（處理被隱藏的圖層）
+            orig_visible = getattr(layer, 'visible', True)
+            try:
+                if hasattr(layer, 'visible'):
+                    layer.visible = True  # type: ignore[attr-defined]
+            except Exception:
+                pass
+
+            composed = layer.composite()
+            if composed is not None:
+                # 若原始寬高為 0（常見於群組），以合成圖像大小回填
+                if not layer_info['width'] or not layer_info['height']:
+                    w, h = composed.size
+                    layer_info['width'] = w
+                    layer_info['height'] = h
+
+                # 檢查圖像是否為空（全透明或全白）
+                import numpy as np
+                img_array = np.array(composed)
+                
+                # 檢查是否有非透明像素
+                has_content = False
+                if len(img_array.shape) == 3:  # RGB/RGBA
+                    if img_array.shape[2] == 4:  # RGBA
+                        # 檢查alpha通道
+                        has_content = np.any(img_array[:, :, 3] > 0)
+                    else:  # RGB
+                        # 檢查是否有非白色像素
+                        has_content = not np.all(img_array == 255)
+                elif len(img_array.shape) == 2:  # Grayscale
+                    has_content = not np.all(img_array == 255)
+
+                if has_content:
+                    layer_path = os.path.join(PSD_DIR, f'{file_id}_layer_{idx}.png')
+                    composed.save(layer_path, format='PNG')
+                    layer_info['image_url'] = f'http://localhost:{DEFAULT_PORT}/api/psd/layer/{file_id}/{idx}'
+                    print(f'✅ 成功生成圖層 {idx} ({getattr(layer, "name", "")}) 圖像: {composed.size}')
+                else:
+                    layer_info['image_url'] = None
+                    print(f'⚠️ 圖層 {idx} ({getattr(layer, "name", "")}) 為空圖像，跳過')
+            else:
+                layer_info['image_url'] = None
+                print(f'⚠️ 圖層 {idx} ({getattr(layer, "name", "")}) 無法合成，跳過')
+        except Exception as e:
+            print(f'❌ 生成圖層 {idx} ({getattr(layer, "name", "")}) 圖像失敗: {e}')
+            layer_info['image_url'] = None
+        finally:
+            # 還原可見性
+            try:
+                if hasattr(layer, 'visible'):
+                    layer.visible = orig_visible  # type: ignore[attr-defined]
+            except Exception:
+                pass
+
+        layers_info.append(layer_info)
+
+        # 遞迴處理群組
+        if layer.is_group():
+            try:
+                for child in layer:
+                    process_layer_recursive(child, parent_index=idx)
+            except Exception as e:
+                print(f'Warning: Failed to traverse group {idx}: {e}')
+
+        return idx
+
+    # 自頂向下遍歷所有最上層圖層
+    print(f'🎨 開始解析 PSD 文件，總圖層數: {len(list(psd))}')
+    try:
+        for i, top_layer in enumerate(psd):
+            print(f'🔄 處理頂層圖層 {i}: {getattr(top_layer, "name", f"Layer {i}")}')
+            process_layer_recursive(top_layer, parent_index=None)
+    except Exception as e:
+        print(f'❌ 遍歷 PSD 失敗: {e}')
+        import traceback
+        traceback.print_exc()
+
+    print(f'✅ PSD 解析完成，共提取 {len(layers_info)} 個圖層')
+    for layer in layers_info:
+        print(f'  - 圖層 {layer["index"]}: "{layer["name"]}" ({layer["type"]}) - 尺寸: {layer["width"]}x{layer["height"]} - 圖像: {bool(layer.get("image_url"))}')
+
+    return layers_info
+
+
+def _generate_thumbnail(psd: PSDImage, file_id: str) -> str:
+    """生成PSD缩略图"""
+    try:
+        # 合成图像
+        composite = psd.composite()
+        
+        # 生成缩略图（最大400px）
+        thumbnail = composite.copy()
+        thumbnail.thumbnail((400, 400), Image.Resampling.LANCZOS)
+        
+        # 保存缩略图
+        thumbnail_path = os.path.join(PSD_DIR, f'{file_id}_thumbnail.png')
+        thumbnail.save(thumbnail_path, format='PNG')
+        
+        return f'http://localhost:{DEFAULT_PORT}/api/psd/thumbnail/{file_id}'
+        
+    except Exception as e:
+        print(f'Warning: Failed to generate thumbnail: {e}')
+        return ''
+
+
+@router.post("/update_layer_order/{file_id}")
+async def update_layer_order(file_id: str, layer_order: List[int]):
+    """
+    更新图层顺序
+    
+    Args:
+        file_id: PSD文件ID
+        layer_order: 新的图层顺序（图层索引列表）
+    """
+    try:
+        metadata_path = os.path.join(PSD_DIR, f'{file_id}_metadata.json')
+        if not os.path.exists(metadata_path):
+            raise HTTPException(status_code=404, detail="PSD metadata not found")
+        
+        # 读取现有元数据
+        with open(metadata_path, 'r', encoding='utf-8') as f:
+            metadata = json.load(f)
+        
+        # 重新排序图层
+        layers = metadata['layers']
+        ordered_layers = []
+        for index in layer_order:
+            layer = next((l for l in layers if l['index'] == index), None)
+            if layer:
+                ordered_layers.append(layer)
+        
+        # 更新元数据
+        metadata['layers'] = ordered_layers
+        
+        # 保存更新后的元数据
+        with open(metadata_path, 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, ensure_ascii=False, indent=2)
+        
+        return {
+            'success': True,
+            'message': 'Layer order updated successfully'
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating layer order: {str(e)}")
+
+
+@router.post("/duplicate_layer/{file_id}/{layer_index}")
+async def duplicate_layer(file_id: str, layer_index: int):
+    """
+    复制指定图层
+    
+    Args:
+        file_id: PSD文件ID
+        layer_index: 要复制的图层索引
+    """
+    try:
+        metadata_path = os.path.join(PSD_DIR, f'{file_id}_metadata.json')
+        if not os.path.exists(metadata_path):
+            raise HTTPException(status_code=404, detail="PSD metadata not found")
+        
+        # 读取现有元数据
+        with open(metadata_path, 'r', encoding='utf-8') as f:
+            metadata = json.load(f)
+        
+        # 找到要复制的图层
+        original_layer = next((l for l in metadata['layers'] if l['index'] == layer_index), None)
+        if not original_layer:
+            raise HTTPException(status_code=404, detail="Layer not found")
+        
+        # 创建新图层
+        new_layer_index = max([l['index'] for l in metadata['layers']]) + 1
+        new_layer = original_layer.copy()
+        new_layer['index'] = new_layer_index
+        new_layer['name'] = f"{original_layer['name']} 副本"
+        new_layer['left'] = original_layer['left'] + 20
+        new_layer['top'] = original_layer['top'] + 20
+        
+        # 复制图层图像文件
+        original_layer_path = os.path.join(PSD_DIR, f'{file_id}_layer_{layer_index}.png')
+        new_layer_path = os.path.join(PSD_DIR, f'{file_id}_layer_{new_layer_index}.png')
+        
+        if os.path.exists(original_layer_path):
+            import shutil
+            shutil.copy2(original_layer_path, new_layer_path)
+            new_layer['image_url'] = f'http://localhost:{DEFAULT_PORT}/api/psd/layer/{file_id}/{new_layer_index}'
+        
+        # 添加新图层到元数据
+        metadata['layers'].append(new_layer)
+        
+        # 保存更新后的元数据
+        with open(metadata_path, 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, ensure_ascii=False, indent=2)
+        
+        return {
+            'success': True,
+            'new_layer': new_layer
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error duplicating layer: {str(e)}")
+
+
+@router.delete("/delete_layer/{file_id}/{layer_index}")
+async def delete_layer(file_id: str, layer_index: int):
+    """
+    删除指定图层
+    
+    Args:
+        file_id: PSD文件ID
+        layer_index: 要删除的图层索引
+    """
+    try:
+        metadata_path = os.path.join(PSD_DIR, f'{file_id}_metadata.json')
+        if not os.path.exists(metadata_path):
+            raise HTTPException(status_code=404, detail="PSD metadata not found")
+        
+        # 读取现有元数据
+        with open(metadata_path, 'r', encoding='utf-8') as f:
+            metadata = json.load(f)
+        
+        # 删除图层
+        metadata['layers'] = [l for l in metadata['layers'] if l['index'] != layer_index]
+        
+        # 删除图层图像文件
+        layer_path = os.path.join(PSD_DIR, f'{file_id}_layer_{layer_index}.png')
+        if os.path.exists(layer_path):
+            os.remove(layer_path)
+        
+        # 保存更新后的元数据
+        with open(metadata_path, 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, ensure_ascii=False, indent=2)
+        
+        return {
+            'success': True,
+            'message': 'Layer deleted successfully'
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting layer: {str(e)}")
+
+
+@router.post("/update_layer_properties/{file_id}/{layer_index}")
+async def update_layer_properties(
+    file_id: str, 
+    layer_index: int, 
+    properties: Dict[str, Any]
+):
+    """
+    更新图层属性
+    
+    Args:
+        file_id: PSD文件ID
+        layer_index: 图层索引
+        properties: 要更新的属性字典
+    """
+    try:
+        metadata_path = os.path.join(PSD_DIR, f'{file_id}_metadata.json')
+        if not os.path.exists(metadata_path):
+            raise HTTPException(status_code=404, detail="PSD metadata not found")
+
+        # 读取现有元数据
+        with open(metadata_path, 'r', encoding='utf-8') as f:
+            metadata = json.load(f)
+
+        # 找到要更新的图层
+        layer = next((l for l in metadata['layers'] if l['index'] == layer_index), None)
+        if not layer:
+            raise HTTPException(status_code=404, detail="Layer not found")
+
+        # 更新图层属性
+        for key, value in properties.items():
+            if key in layer:
+                layer[key] = value
+
+        # 保存更新后的元数据
+        with open(metadata_path, 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, ensure_ascii=False, indent=2)
+
+        return {"message": "Layer properties updated successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update layer properties: {str(e)}")
+
+@router.get("/thumbnail/{file_id}")
+async def get_thumbnail(file_id: str):
+    """获取PSD缩略图"""
+    thumbnail_path = os.path.join(PSD_DIR, f'{file_id}_thumbnail.png')
+    if not os.path.exists(thumbnail_path):
+        raise HTTPException(status_code=404, detail="Thumbnail not found")
+    return FileResponse(thumbnail_path)
