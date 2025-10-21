@@ -20,8 +20,6 @@ import {
     FolderOpen,
     Edit3,
     Move,
-    ChevronDown,
-    ChevronRight,
     X,
     Palette,
     AlignLeft,
@@ -58,6 +56,7 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
     const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set())
     const [searchTerm, setSearchTerm] = useState('')
     const [filterType, setFilterType] = useState<'all' | 'text' | 'layer' | 'group'>('all')
+    const [currentCanvas, setCurrentCanvas] = useState(0)
 
     // 过滤和搜索图层
     const filteredLayers = useMemo(() => {
@@ -175,45 +174,112 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
 
     console.log('PSDLayerSidebar 渲染狀態:', { isVisible, psdData: !!psdData, layersCount: psdData?.layers?.length })
 
-    if (!isVisible || !psdData) {
-        console.log('PSDLayerSidebar 不顯示:', { isVisible, hasPsdData: !!psdData })
-        return null
+    if (!psdData) {
+        console.log('PSDLayerSidebar 沒有 PSD 數據')
+        return (
+            <div className="h-full w-full bg-background flex flex-col items-center justify-center">
+                <div className="text-center text-muted-foreground">
+                    <Layers className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium">沒有 PSD 文件</p>
+                    <p className="text-sm">請先上傳 PSD 文件</p>
+                </div>
+            </div>
+        )
     }
 
     return (
-        <div className="fixed left-0 top-0 h-full w-80 bg-background border-r shadow-lg z-30 flex flex-col">
-            {/* 头部 */}
-            <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                        <Layers className="h-5 w-5" />
-                        PSD 图层列表
-                    </CardTitle>
+        <div
+            className="fixed top-4 right-4 z-50 bg-background/95 backdrop-blur-sm border rounded-lg shadow-lg cursor-move"
+            style={{
+                width: '320px',
+                maxHeight: '80vh'
+            }}
+        >
+            {/* 浮动面板头部 - 可拖拽 */}
+            <div
+                className="flex items-center justify-between p-2 border-b cursor-move"
+                onMouseDown={(e) => {
+                    // 简单的拖拽实现
+                    const startX = e.clientX
+                    const startY = e.clientY
+                    const element = e.currentTarget.parentElement
+                    if (!element) return
+
+                    const startLeft = element.offsetLeft
+                    const startTop = element.offsetTop
+
+                    const handleMouseMove = (e: MouseEvent) => {
+                        const deltaX = e.clientX - startX
+                        const deltaY = e.clientY - startY
+                        element.style.left = `${startLeft + deltaX}px`
+                        element.style.top = `${startTop + deltaY}px`
+                        element.style.right = 'auto'
+                    }
+
+                    const handleMouseUp = () => {
+                        document.removeEventListener('mousemove', handleMouseMove)
+                        document.removeEventListener('mouseup', handleMouseUp)
+                    }
+
+                    document.addEventListener('mousemove', handleMouseMove)
+                    document.addEventListener('mouseup', handleMouseUp)
+                }}
+            >
+                <div className="flex items-center gap-2">
+                    <Layers className="h-4 w-4" />
+                    <span className="text-sm font-medium">图层列表</span>
+                    <Badge variant="secondary" className="text-xs">
+                        {filteredLayers.length}
+                    </Badge>
+                </div>
+                <div className="flex items-center gap-1">
+                    {/* 画布切换 */}
+                    <div className="flex items-center gap-1 mr-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => setCurrentCanvas(Math.max(0, currentCanvas - 1))}
+                            disabled={currentCanvas === 0}
+                        >
+                            ←
+                        </Button>
+                        <span className="text-xs text-muted-foreground">
+                            画布 {currentCanvas + 1}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => setCurrentCanvas(currentCanvas + 1)}
+                        >
+                            →
+                        </Button>
+                    </div>
+
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={onClose}
-                        className="h-8 w-8 p-0"
+                        className="h-6 w-6 p-0"
+                        title="关闭"
                     >
-                        <X className="h-4 w-4" />
+                        <X className="h-3 w-3" />
                     </Button>
                 </div>
-            </CardHeader>
+            </div>
 
-            <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden">
+            <div className="flex flex-col">
                 {/* 搜索和过滤 */}
-                <div className="space-y-3">
-                    <div className="relative">
-                        <Input
-                            placeholder="搜索图层..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pr-8"
-                        />
-                    </div>
-
+                <div className="p-2 space-y-2 border-b">
+                    <Input
+                        placeholder="搜索图层..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="h-7 text-xs"
+                    />
                     <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-7 text-xs">
                             <SelectValue placeholder="过滤类型" />
                         </SelectTrigger>
                         <SelectContent>
@@ -225,235 +291,145 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
                     </Select>
                 </div>
 
-                <Separator />
+                {/* 图层列表 - 紧凑版本 */}
+                <div className="relative">
+                    <div
+                        className="flex-1 overflow-y-auto pr-2"
+                        style={{
+                            maxHeight: '300px',
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: '#3b82f6 #f1f5f9'
+                        }}
+                    >
+                        <style dangerouslySetInnerHTML={{
+                            __html: `
+                                    .layer-scroll::-webkit-scrollbar {
+                                        width: 10px;
+                                    }
+                                    .layer-scroll::-webkit-scrollbar-track {
+                                        background: #f1f5f9;
+                                        border-radius: 5px;
+                                        border: 1px solid #e2e8f0;
+                                    }
+                                    .layer-scroll::-webkit-scrollbar-thumb {
+                                        background: #3b82f6;
+                                        border-radius: 5px;
+                                        border: 1px solid #2563eb;
+                                    }
+                                    .layer-scroll::-webkit-scrollbar-thumb:hover {
+                                        background: #2563eb;
+                                    }
+                                    .layer-scroll::-webkit-scrollbar-corner {
+                                        background: #f1f5f9;
+                                    }
+                                `
+                        }} />
+                        <div className="p-2 space-y-1 layer-scroll">
+                            {filteredLayers.map((layer) => (
+                                <div key={layer.index} className="flex items-center gap-2 p-1 hover:bg-muted/50 rounded">
+                                    {/* 图层图标 */}
+                                    <div className="flex-shrink-0">
+                                        {getLayerIcon(layer)}
+                                    </div>
 
-                {/* 图层列表 */}
-                <ScrollArea className="flex-1">
-                    <div className="space-y-2">
-                        {(() => {
-                            console.log('渲染圖層列表:', { filteredLayersCount: filteredLayers.length, filteredLayers })
-                            return null
-                        })()}
-                        {filteredLayers.map((layer) => (
-                            <Card key={layer.index} className="p-3">
-                                <div className="space-y-3">
-                                    {/* 图层头部 */}
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                                            {getLayerIcon(layer)}
-                                            <span className="text-sm font-medium truncate">
+                                    {/* 图层信息 */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-xs font-medium truncate">
                                                 {layer.name}
                                             </span>
-                                            <Badge variant="secondary" className="text-xs">
+                                            <Badge variant="secondary" className="text-xs px-1 py-0">
                                                 {getLayerTypeLabel(layer)}
                                             </Badge>
                                         </div>
+                                        <div className="text-xs text-muted-foreground">
+                                            {Math.round((layer.opacity || 255) / 255 * 100)}%
+                                        </div>
+                                    </div>
 
-                                        <div className="flex items-center gap-1">
-                                            {/* 可见性切换 */}
+                                    {/* 控制按钮 */}
+                                    <div className="flex items-center gap-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 w-6 p-0"
+                                            onClick={() => handleLayerVisibilityToggle(layer.index)}
+                                            title={layer.visible ? '隐藏图层' : '显示图层'}
+                                        >
+                                            {layer.visible ? (
+                                                <Eye className="h-3 w-3" />
+                                            ) : (
+                                                <EyeOff className="h-3 w-3 opacity-50" />
+                                            )}
+                                        </Button>
+
+                                        {layer.type === 'text' && (
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
                                                 className="h-6 w-6 p-0"
-                                                onClick={() => handleLayerVisibilityToggle(layer.index)}
+                                                onClick={() => setSelectedLayer(selectedLayer?.index === layer.index ? null : layer)}
+                                                title="编辑文字"
                                             >
-                                                {layer.visible ? (
-                                                    <Eye className="h-3 w-3" />
-                                                ) : (
-                                                    <EyeOff className="h-3 w-3" />
-                                                )}
+                                                <Edit3 className="h-3 w-3" />
                                             </Button>
-
-                                            {/* 编辑按钮 */}
-                                            {layer.type === 'text' && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 w-6 p-0"
-                                                    onClick={() => setSelectedLayer(selectedLayer?.index === layer.index ? null : layer)}
-                                                >
-                                                    <Edit3 className="h-3 w-3" />
-                                                </Button>
-                                            )}
-                                        </div>
+                                        )}
                                     </div>
-
-                                    {/* 透明度控制 */}
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <Label className="text-xs">透明度</Label>
-                                            <span className="text-xs text-muted-foreground">
-                                                {Math.round((layer.opacity || 255) / 255 * 100)}%
-                                            </span>
-                                        </div>
-                                        <Slider
-                                            value={[Math.round((layer.opacity || 255) / 255 * 100)]}
-                                            onValueChange={([value]) => handleOpacityChange(layer.index, Math.round(value * 255 / 100))}
-                                            max={100}
-                                            min={0}
-                                            step={1}
-                                            className="w-full"
-                                        />
-                                    </div>
-
-                                    {/* 文字图层编辑 */}
-                                    {layer.type === 'text' && selectedLayer?.index === layer.index && (
-                                        <div className="space-y-3 pt-2 border-t">
-                                            <div className="text-xs font-medium text-blue-600">文字编辑</div>
-
-                                            {/* 文字内容 */}
-                                            <div className="space-y-1">
-                                                <Label className="text-xs">文字内容</Label>
-                                                <Input
-                                                    value={layer.text_content || layer.name || ''}
-                                                    onChange={(e) => handleTextPropertyUpdate(layer.index, 'text_content', e.target.value)}
-                                                    placeholder="输入文字内容"
-                                                    className="text-xs"
-                                                />
-                                            </div>
-
-                                            {/* 字体大小 */}
-                                            <div className="space-y-1">
-                                                <div className="flex items-center justify-between">
-                                                    <Label className="text-xs">字体大小</Label>
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {layer.font_size || 16}px
-                                                    </span>
-                                                </div>
-                                                <Slider
-                                                    value={[layer.font_size || 16]}
-                                                    onValueChange={([value]) => handleTextPropertyUpdate(layer.index, 'font_size', value)}
-                                                    max={200}
-                                                    min={8}
-                                                    step={1}
-                                                    className="w-full"
-                                                />
-                                            </div>
-
-                                            {/* 字体颜色 */}
-                                            <div className="space-y-1">
-                                                <Label className="text-xs">字体颜色</Label>
-                                                <div className="flex items-center gap-2">
-                                                    <Input
-                                                        type="color"
-                                                        value={layer.text_color || '#000000'}
-                                                        onChange={(e) => handleTextPropertyUpdate(layer.index, 'text_color', e.target.value)}
-                                                        className="w-8 h-6 p-0 border-0"
-                                                    />
-                                                    <Input
-                                                        value={layer.text_color || '#000000'}
-                                                        onChange={(e) => handleTextPropertyUpdate(layer.index, 'text_color', e.target.value)}
-                                                        placeholder="#000000"
-                                                        className="text-xs flex-1"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* 字体样式 */}
-                                            <div className="space-y-2">
-                                                <Label className="text-xs">字体样式</Label>
-                                                <div className="flex gap-1">
-                                                    <Button
-                                                        variant={layer.font_weight === 'bold' ? 'default' : 'outline'}
-                                                        size="sm"
-                                                        className="h-6 px-2"
-                                                        onClick={() => handleTextPropertyUpdate(layer.index, 'font_weight',
-                                                            layer.font_weight === 'bold' ? 'normal' : 'bold'
-                                                        )}
-                                                    >
-                                                        <Bold className="h-3 w-3" />
-                                                    </Button>
-                                                    <Button
-                                                        variant={layer.font_style === 'italic' ? 'default' : 'outline'}
-                                                        size="sm"
-                                                        className="h-6 px-2"
-                                                        onClick={() => handleTextPropertyUpdate(layer.index, 'font_style',
-                                                            layer.font_style === 'italic' ? 'normal' : 'italic'
-                                                        )}
-                                                    >
-                                                        <Italic className="h-3 w-3" />
-                                                    </Button>
-                                                    <Button
-                                                        variant={layer.text_decoration === 'underline' ? 'default' : 'outline'}
-                                                        size="sm"
-                                                        className="h-6 px-2"
-                                                        onClick={() => handleTextPropertyUpdate(layer.index, 'text_decoration',
-                                                            layer.text_decoration === 'underline' ? 'none' : 'underline'
-                                                        )}
-                                                    >
-                                                        <Underline className="h-3 w-3" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-
-                                            {/* 文字对齐 */}
-                                            <div className="space-y-2">
-                                                <Label className="text-xs">文字对齐</Label>
-                                                <div className="flex gap-1">
-                                                    <Button
-                                                        variant={layer.text_align === 'left' ? 'default' : 'outline'}
-                                                        size="sm"
-                                                        className="h-6 px-2"
-                                                        onClick={() => handleTextPropertyUpdate(layer.index, 'text_align', 'left')}
-                                                    >
-                                                        <AlignLeft className="h-3 w-3" />
-                                                    </Button>
-                                                    <Button
-                                                        variant={layer.text_align === 'center' ? 'default' : 'outline'}
-                                                        size="sm"
-                                                        className="h-6 px-2"
-                                                        onClick={() => handleTextPropertyUpdate(layer.index, 'text_align', 'center')}
-                                                    >
-                                                        <AlignCenter className="h-3 w-3" />
-                                                    </Button>
-                                                    <Button
-                                                        variant={layer.text_align === 'right' ? 'default' : 'outline'}
-                                                        size="sm"
-                                                        className="h-6 px-2"
-                                                        onClick={() => handleTextPropertyUpdate(layer.index, 'text_align', 'right')}
-                                                    >
-                                                        <AlignRight className="h-3 w-3" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-
-                                            {/* 字体族 */}
-                                            <div className="space-y-1">
-                                                <Label className="text-xs">字体族</Label>
-                                                <Select
-                                                    value={layer.font_family || 'Arial'}
-                                                    onValueChange={(value) => handleTextPropertyUpdate(layer.index, 'font_family', value)}
-                                                >
-                                                    <SelectTrigger className="h-8">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="Arial">Arial</SelectItem>
-                                                        <SelectItem value="Helvetica">Helvetica</SelectItem>
-                                                        <SelectItem value="Times New Roman">Times New Roman</SelectItem>
-                                                        <SelectItem value="Georgia">Georgia</SelectItem>
-                                                        <SelectItem value="Verdana">Verdana</SelectItem>
-                                                        <SelectItem value="Courier New">Courier New</SelectItem>
-                                                        <SelectItem value="微软雅黑">微软雅黑</SelectItem>
-                                                        <SelectItem value="宋体">宋体</SelectItem>
-                                                        <SelectItem value="黑体">黑体</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
-                            </Card>
-                        ))}
-                    </div>
-                </ScrollArea>
+                            ))}
+                        </div>
 
-                {/* 底部信息 */}
-                <div className="text-xs text-muted-foreground text-center pt-2 border-t">
-                    共 {filteredLayers.length} 个图层
+                        {/* 滚动条指示器和状态 */}
+                        {filteredLayers.length > 8 && (
+                            <div className="absolute bottom-2 right-2 bg-background/90 backdrop-blur-sm rounded px-2 py-1 text-xs text-muted-foreground border shadow-sm">
+                                <div className="flex items-center gap-1">
+                                    <div className="w-1 h-1 bg-blue-500 rounded-full animate-pulse"></div>
+
+                                </div>
+                            </div>
+                        )}
+
+
+                    </div>
                 </div>
-            </CardContent>
+
+                {/* 文字编辑浮动面板 */}
+                {selectedLayer && selectedLayer.type === 'text' && (
+                    <div className="p-2 border-t bg-muted/30">
+                        <div className="text-xs font-medium text-blue-600 mb-2">文字编辑</div>
+                        <div className="space-y-2">
+                            <Input
+                                value={selectedLayer.text_content || selectedLayer.name || ''}
+                                onChange={(e) => handleTextPropertyUpdate(selectedLayer.index, 'text_content', e.target.value)}
+                                placeholder="输入文字内容"
+                                className="text-xs h-7"
+                            />
+                            <div className="flex gap-1">
+                                <Button
+                                    variant={selectedLayer.font_weight === 'bold' ? 'default' : 'outline'}
+                                    size="sm"
+                                    className="h-6 px-2"
+                                    onClick={() => handleTextPropertyUpdate(selectedLayer.index, 'font_weight',
+                                        selectedLayer.font_weight === 'bold' ? 'normal' : 'bold'
+                                    )}
+                                >
+                                    <Bold className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                    variant={selectedLayer.font_style === 'italic' ? 'default' : 'outline'}
+                                    size="sm"
+                                    className="h-6 px-2"
+                                    onClick={() => handleTextPropertyUpdate(selectedLayer.index, 'font_style',
+                                        selectedLayer.font_style === 'italic' ? 'normal' : 'italic'
+                                    )}
+                                >
+                                    <Italic className="h-3 w-3" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
-

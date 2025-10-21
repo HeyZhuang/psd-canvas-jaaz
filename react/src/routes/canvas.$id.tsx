@@ -5,12 +5,14 @@ import CanvasMenu from '@/components/canvas/menu'
 import CanvasPopbarWrapper from '@/components/canvas/pop-bar'
 // VideoCanvasOverlay removed - using native Excalidraw embeddable elements instead
 import ChatInterface from '@/components/chat/Chat'
+import { PSDLayerSidebar } from '@/components/canvas/PSDLayerSidebar'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { CanvasProvider } from '@/contexts/canvas'
 import { Session } from '@/types/types'
 import { createFileRoute, useParams, useSearch } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { PSDUploadResponse } from '@/api/upload'
 
 export const Route = createFileRoute('/canvas/$id')({
   component: Canvas,
@@ -24,6 +26,9 @@ function Canvas() {
   const [canvasName, setCanvasName] = useState('')
   const [sessionList, setSessionList] = useState<Session[]>([])
   // initialVideos removed - using native Excalidraw embeddable elements instead
+
+  // PSD图层侧边栏状态
+  const [psdData, setPsdData] = useState<PSDUploadResponse | null>(null)
   const search = useSearch({ from: '/canvas/$id' }) as {
     sessionId: string
   }
@@ -65,6 +70,11 @@ function Canvas() {
     await renameCanvas(id, canvasName)
   }
 
+  // PSD数据更新处理
+  const handlePSDUpdate = (updatedPsdData: PSDUploadResponse) => {
+    setPsdData(updatedPsdData)
+  }
+
   return (
     <CanvasProvider>
       <div className='flex flex-col w-screen h-screen'>
@@ -73,13 +83,15 @@ function Canvas() {
           canvasId={id}
           onNameChange={setCanvasName}
           onNameSave={handleNameSave}
+          psdData={psdData}
+          onPSDUpdate={handlePSDUpdate}
         />
         <ResizablePanelGroup
           direction='horizontal'
           className='w-screen h-screen'
           autoSaveId='jaaz-chat-panel'
         >
-          <ResizablePanel className='relative' defaultSize={75}>
+          <ResizablePanel className='relative' defaultSize={80}>
             <div className='w-full h-full'>
               {isLoading ? (
                 <div className='flex-1 flex-grow px-4 bg-accent w-[24%] absolute right-0'>
@@ -99,13 +111,15 @@ function Canvas() {
 
           <ResizableHandle />
 
-          <ResizablePanel defaultSize={25}>
+          <ResizablePanel defaultSize={20}>
             <div className='flex-1 flex-grow bg-accent/50 w-full'>
-              <ChatInterface
-                canvasId={id}
-                sessionList={sessionList}
-                setSessionList={setSessionList}
-                sessionId={searchSessionId}
+              <PSDLayerSidebar
+                psdData={psdData}
+                isVisible={true}
+                onClose={() => {
+                  setPsdData(null)
+                }}
+                onUpdate={handlePSDUpdate}
               />
             </div>
           </ResizablePanel>

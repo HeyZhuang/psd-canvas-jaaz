@@ -8,6 +8,8 @@ type CanvasHeaderProps = {
   canvasId: string
   onNameChange: (name: string) => void
   onNameSave: () => void
+  psdData?: any
+  onPSDUpdate?: (psdData: any) => void
 }
 
 const CanvasHeader: React.FC<CanvasHeaderProps> = ({
@@ -15,6 +17,8 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
   canvasId,
   onNameChange,
   onNameSave,
+  psdData,
+  onPSDUpdate,
 }) => {
   return (
     <TopMenu
@@ -28,7 +32,10 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
       }
       right={
         <div className="flex items-center gap-2">
-          <PSDCanvasUploader canvasId={canvasId} />
+          <PSDCanvasUploader
+            canvasId={canvasId}
+            onPSDUploaded={onPSDUpdate}
+          />
           <CanvasExport />
         </div>
       }
