@@ -136,7 +136,7 @@ class DatabaseService:
             """, (data, thumbnail, id))
             await db.commit()
 
-    async def get_canvas_data(self, id: str) -> Optional[Dict[str, Any]]:
+    async def get_canvas_data(self, id: str) -> Dict[str, Any]:
         """Get canvas data"""
         async with aiosqlite.connect(self.db_path) as db:
             db.row_factory = sqlite3.Row
@@ -150,12 +150,24 @@ class DatabaseService:
             sessions = await self.list_sessions(id)
             
             if row:
+                try:
+                    canvas_data = json.loads(row['data']) if row['data'] else {}
+                except (json.JSONDecodeError, TypeError):
+                    # 如果JSON解析失败，使用空对象
+                    canvas_data = {}
+                
                 return {
-                    'data': json.loads(row['data']) if row['data'] else {},
-                    'name': row['name'],
+                    'data': canvas_data,
+                    'name': row['name'] or '未命名画布',
                     'sessions': sessions
                 }
-            return None
+            else:
+                # 如果画布不存在，返回默认数据而不是 None
+                return {
+                    'data': {},
+                    'name': '未命名画布',
+                    'sessions': []
+                }
 
     async def delete_canvas(self, id: str):
         """Delete canvas and related data"""

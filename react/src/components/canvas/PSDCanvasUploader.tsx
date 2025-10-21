@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { Upload, Layers } from 'lucide-react'
+import { Upload, Layers, X } from 'lucide-react'
 import { uploadPSD, type PSDUploadResponse } from '@/api/upload'
 import { useCanvas } from '@/contexts/canvas'
 import { ExcalidrawImageElement } from '@excalidraw/excalidraw/element/types'
@@ -21,6 +21,99 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
     const [psdData, setPsdData] = useState<PSDUploadResponse | null>(null)
     const [showLayerSidebar, setShowLayerSidebar] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
+
+    // 全局清理重复图层
+    const cleanupDuplicateLayers = useCallback(() => {
+        if (!excalidrawAPI) return
+
+        const currentElements = excalidrawAPI.getSceneElements()
+        const psdElements = currentElements.filter(element => element.customData?.psdFileId)
+
+        if (psdElements.length === 0) return
+
+        console.log(`开始全局清理 ${psdElements.length} 个PSD图层`)
+
+        // 按图层名称分组，保留最新的
+        const layerGroups = new Map<string, any[]>()
+        psdElements.forEach(element => {
+            const layerName = element.customData?.layerName || 'unknown'
+            if (!layerGroups.has(layerName)) {
+                layerGroups.set(layerName, [])
+            }
+            layerGroups.get(layerName)!.push(element)
+        })
+
+        // 清理重复图层
+        const elementsToRemove = new Set<string>()
+        layerGroups.forEach((elements, layerName) => {
+            if (elements.length > 1) {
+                console.log(`图层 "${layerName}" 有 ${elements.length} 个重复项`)
+
+                // 按更新时间排序，保留最新的
+                elements.sort((a, b) => (b.updated || 0) - (a.updated || 0))
+
+                // 标记除第一个（最新的）外的所有元素为删除
+                for (let i = 1; i < elements.length; i++) {
+                    elementsToRemove.add(elements[i].id)
+                    console.log(`标记删除重复图层: ${layerName} (${elements[i].id})`)
+                }
+            }
+        })
+
+        if (elementsToRemove.size > 0) {
+            const cleanedElements = currentElements.filter(element => !elementsToRemove.has(element.id))
+            excalidrawAPI.updateScene({
+                elements: cleanedElements,
+            })
+            console.log(`全局清理完成，删除了 ${elementsToRemove.size} 个重复图层`)
+        }
+    }, [excalidrawAPI])
+
+    // 检查图像是否为灰色背景
+    const checkGrayBackground = useCallback(async (dataURL: string): Promise<boolean> => {
+        return new Promise((resolve) => {
+            const img = new Image()
+            img.onload = () => {
+                const canvas = document.createElement('canvas')
+                const ctx = canvas.getContext('2d')
+                if (!ctx) {
+                    resolve(false)
+                    return
+                }
+
+                canvas.width = Math.min(img.width, 100) // 降采样提高性能
+                canvas.height = Math.min(img.height, 100)
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+
+                const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                let grayPixels = 0
+                let totalPixels = 0
+
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i]
+                    const g = data[i + 1]
+                    const b = data[i + 2]
+                    const a = data[i + 3]
+
+                    // 只检查不透明的像素
+                    if (a > 10) {
+                        totalPixels++
+                        // 检查是否为灰色（RGB值相近）
+                        const maxDiff = Math.max(r, g, b) - Math.min(r, g, b)
+                        if (maxDiff < 20) { // RGB差值小于20认为是灰色
+                            grayPixels++
+                        }
+                    }
+                }
+
+                // 如果80%以上的像素是灰色，认为是灰色背景
+                const grayRatio = totalPixels > 0 ? grayPixels / totalPixels : 0
+                resolve(grayRatio > 0.8)
+            }
+            img.onerror = () => resolve(false)
+            img.src = dataURL
+        })
+    }, [])
 
     // 分析圖片可視性（平均亮度、透明度、對比），判定是否需要墊底矩形
     const analyzeVisibility = useCallback(async (dataURL: string) => {
@@ -79,15 +172,52 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
                 return
             }
 
-            // 检查是否已经存在相同的图层（基于PSD文件ID和图层索引）
+            // 更严格的重复图层检测
             const currentElements = excalidrawAPI.getSceneElements()
-            const existingLayer = currentElements.find(element =>
-                element.customData?.psdFileId === psdFileId &&
-                element.customData?.psdLayerIndex === layer.index
-            )
+
+            // 检查多种重复情况
+            const existingLayer = currentElements.find(element => {
+                // 1. 基于PSD文件ID和图层索引
+                if (element.customData?.psdFileId === psdFileId &&
+                    element.customData?.psdLayerIndex === layer.index) {
+                    return true
+                }
+
+                // 2. 基于图层名称和位置（防止同名图层重复）
+                if (element.customData?.layerName === layer.name &&
+                    Math.abs(element.x - (layer.left + offsetX)) < 5 &&
+                    Math.abs(element.y - (layer.top + offsetY)) < 5) {
+                    return true
+                }
+
+                // 3. 基于图层名称和尺寸（防止同名同尺寸图层重复）
+                if (element.customData?.layerName === layer.name &&
+                    Math.abs(element.width - layer.width) < 5 &&
+                    Math.abs(element.height - layer.height) < 5) {
+                    return true
+                }
+
+                // 4. 基于图层名称和PSD文件ID（防止同名图层在不同PSD中重复）
+                if (element.customData?.layerName === layer.name &&
+                    element.customData?.psdFileId === psdFileId) {
+                    return true
+                }
+
+                // 5. 基于图层名称（全局去重，防止任何同名图层）
+                if (element.customData?.layerName === layer.name) {
+                    console.log(`发现全局重复图层名称: ${layer.name}`)
+                    return true
+                }
+
+                return false
+            })
 
             if (existingLayer) {
-                console.warn(`图层 "${layer.name}" (索引: ${layer.index}) 已存在，跳过添加`)
+                console.warn(`图层 "${layer.name}" (索引: ${layer.index}) 已存在，跳过添加`, {
+                    existingElement: existingLayer,
+                    newLayer: layer,
+                    duplicateReason: '多种重复检测'
+                })
                 return
             }
 
@@ -153,6 +283,13 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
                     reader.readAsDataURL(file)
                 })
 
+                // 检查图像是否为灰色背景
+                const isGrayBackground = await checkGrayBackground(dataURL)
+                if (isGrayBackground) {
+                    console.warn(`图层 "${layer.name}" 检测到灰色背景，跳过添加`)
+                    return
+                }
+
                 const imageElement: ExcalidrawImageElement = {
                     type: 'image',
                     id: `psd_layer_${layer.index}_${Date.now()}`,
@@ -168,7 +305,7 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
                     strokeStyle: 'solid',
                     roundness: null,
                     roughness: 1,
-                    opacity: 100, // 設置為 100% 完全不透明
+                    opacity: Math.round((layer.opacity || 255) / 255 * 100), // 使用PSD原始透明度
                     seed: Math.random(),
                     version: 1,
                     versionNonce: Math.random(),
@@ -183,6 +320,8 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
                         psdLayerIndex: layer.index,
                         psdFileId: psdFileId,
                         layerName: layer.name,
+                        originalOpacity: layer.opacity || 255,
+                        blendMode: layer.blend_mode || 'normal',
                     },
                     fileId: `psd_layer_${layer.index}_${psdFileId}_${Date.now()}` as any,
                     link: null,
@@ -266,11 +405,45 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
             console.log('開始處理 PSD 數據:', psdData)
             console.log('總圖層數量:', psdData.layers.length)
 
-            // 清理可能存在的重复图层（基于PSD文件ID）
+            // 首先进行全局清理
+            cleanupDuplicateLayers()
+
+            // 更彻底的重复图层清理
             const currentElements = excalidrawAPI.getSceneElements()
-            const elementsToKeep = currentElements.filter(element =>
+
+            // 1. 清理基于PSD文件ID的重复图层
+            let elementsToKeep = currentElements.filter(element =>
                 !element.customData?.psdFileId || element.customData.psdFileId !== psdData.file_id
             )
+
+            // 2. 清理基于图层名称的重复图层（防止同名图层重复）
+            const layerNames = new Set<string>()
+            elementsToKeep = elementsToKeep.filter(element => {
+                const layerName = element.customData?.layerName
+                if (!layerName) return true // 保留非PSD图层
+
+                if (layerNames.has(layerName)) {
+                    console.log(`发现重复图层名称: ${layerName}，移除重复项`)
+                    return false
+                }
+                layerNames.add(layerName)
+                return true
+            })
+
+            // 3. 清理基于位置的重复图层（防止同位置图层重复）
+            const positionMap = new Map<string, any>()
+            elementsToKeep = elementsToKeep.filter(element => {
+                const layerName = element.customData?.layerName
+                if (!layerName) return true // 保留非PSD图层
+
+                const positionKey = `${Math.round(element.x)},${Math.round(element.y)}`
+                if (positionMap.has(positionKey)) {
+                    console.log(`发现同位置图层: ${layerName} at (${element.x}, ${element.y})，移除重复项`)
+                    return false
+                }
+                positionMap.set(positionKey, element)
+                return true
+            })
 
             if (elementsToKeep.length < currentElements.length) {
                 console.log(`清理了 ${currentElements.length - elementsToKeep.length} 個重複的 PSD 圖層`)
@@ -293,33 +466,39 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
                 })
             })
 
-            // 最寬鬆的過濾條件：包含所有有內容的圖層
+            // 更严格的图层过滤条件：只包含有实际内容的图层
             const imageLayers = psdData.layers.filter(layer => {
                 const hasImageUrl = !!layer.image_url
-                const hasValidSize = (layer.width && layer.width > 0) || (layer.height && layer.height > 0)
-                const hasAnySize = layer.width || layer.height
+                const hasValidSize = (layer.width && layer.width > 0) && (layer.height && layer.height > 0)
                 const isVisible = layer.visible !== false
                 const hasName = layer.name && layer.name.trim() !== ''
 
-                // 優先包含有 image_url 的圖層
-                const priorityInclude = hasImageUrl && hasValidSize && isVisible
-                // 次選包含有尺寸但沒有 image_url 的圖層（將生成占位符）
-                const fallbackInclude = !hasImageUrl && hasAnySize && isVisible && hasName
+                // 排除常见的背景图层名称
+                const backgroundNames = ['background', 'bg', '背景', '底图', '背景层']
+                const isBackgroundLayer = backgroundNames.some(bgName =>
+                    layer.name.toLowerCase().includes(bgName.toLowerCase())
+                )
 
-                const willInclude = priorityInclude || fallbackInclude
+                // 排除纯色图层（通常是背景）
+                const isSolidColorLayer = layer.name.toLowerCase().includes('solid') ||
+                    layer.name.toLowerCase().includes('color') ||
+                    layer.name.toLowerCase().includes('纯色')
+
+                // 只包含有image_url且有有效尺寸的可见图层
+                const shouldInclude = hasImageUrl && hasValidSize && isVisible && hasName &&
+                    !isBackgroundLayer && !isSolidColorLayer
 
                 console.log(`圖層 "${layer.name}" 過濾結果:`, {
                     hasImageUrl,
                     hasValidSize,
-                    hasAnySize,
                     isVisible,
                     hasName,
-                    priorityInclude,
-                    fallbackInclude,
-                    willInclude
+                    isBackgroundLayer,
+                    isSolidColorLayer,
+                    shouldInclude
                 })
 
-                return willInclude
+                return shouldInclude
             })
 
             console.log('過濾後的可見圖層數量:', imageLayers.length)

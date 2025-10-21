@@ -42,15 +42,21 @@ function Canvas() {
         setError(null)
         const data = await getCanvas(id)
         if (mounted) {
+          // getCanvas 现在总是返回有效数据，不需要额外验证
           setCanvas(data)
           setCanvasName(data.name)
           setSessionList(data.sessions)
           // Video elements now handled by native Excalidraw embeddable elements
         }
       } catch (err) {
+        // 这个 catch 现在主要用于处理其他类型的错误
         if (mounted) {
-          setError(err instanceof Error ? err : new Error('Failed to fetch canvas data'))
-          console.error('Failed to fetch canvas data:', err)
+          console.error('Unexpected error in fetchCanvas:', err)
+          setError(err instanceof Error ? err : new Error('Unexpected error occurred'))
+          // 设置默认值
+          setCanvas(null)
+          setCanvasName('未命名画布')
+          setSessionList([])
         }
       } finally {
         if (mounted) {
@@ -73,6 +79,24 @@ function Canvas() {
   // PSD数据更新处理
   const handlePSDUpdate = (updatedPsdData: PSDUploadResponse) => {
     setPsdData(updatedPsdData)
+  }
+
+  // 如果有错误，显示错误信息
+  if (error) {
+    return (
+      <div className='flex flex-col items-center justify-center h-screen bg-background'>
+        <div className='text-center p-8'>
+          <h2 className='text-2xl font-bold text-destructive mb-4'>加载画布失败</h2>
+          <p className='text-muted-foreground mb-4'>{error.message}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className='px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90'
+          >
+            重新加载
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (

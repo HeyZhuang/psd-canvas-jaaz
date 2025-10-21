@@ -214,6 +214,113 @@ async def export_psd(file_id: str, format: str = "png"):
         raise HTTPException(status_code=500, detail=f"Error exporting PSD: {str(e)}")
 
 
+def _composite_layer_with_transparency(layer) -> Optional[Image.Image]:
+    """
+    使用透明背景合成图层，确保保持PSD的原始透明度
+    """
+    try:
+        from PIL import Image
+        import numpy as np
+        
+        # 获取图层尺寸
+        width = getattr(layer, 'width', 0)
+        height = getattr(layer, 'height', 0)
+        
+        if width <= 0 or height <= 0:
+            return None
+            
+        # 创建透明背景
+        transparent_bg = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+        
+        # 尝试多种合成方法
+        composed = None
+        
+        # 方法1: 直接合成
+        try:
+            composed = layer.composite()
+        except Exception as e:
+            print(f'⚠️ 直接合成失败: {e}')
+        
+        # 方法2: 如果直接合成失败，尝试使用透明背景
+        if composed is None:
+            try:
+                # 临时设置图层为可见
+                orig_visible = getattr(layer, 'visible', True)
+                if hasattr(layer, 'visible'):
+                    layer.visible = True
+                
+                # 在透明背景上合成
+                composed = layer.composite()
+                
+                # 恢复原始可见性
+                if hasattr(layer, 'visible'):
+                    layer.visible = orig_visible
+            except Exception as e:
+                print(f'⚠️ 透明背景合成失败: {e}')
+        
+        if composed is None:
+            return None
+            
+        # 确保合成结果是RGBA格式
+        if composed.mode != 'RGBA':
+            composed = composed.convert('RGBA')
+            
+        # 更精确的背景检测和移除
+        img_array = np.array(composed)
+        
+        if len(img_array.shape) == 3 and img_array.shape[2] == 4:
+            # RGBA图像
+            alpha_channel = img_array[:, :, 3]
+            rgb_channels = img_array[:, :, :3]
+            
+            # 检查是否为纯背景图层
+            # 1. 检查alpha通道是否全为255（完全不透明）
+            # 2. 检查RGB通道是否为纯色（白色、灰色等）
+            
+            if np.all(alpha_channel == 255):
+                # 检查是否为纯色背景
+                rgb_min = np.min(rgb_channels)
+                rgb_max = np.max(rgb_channels)
+                rgb_std = np.std(rgb_channels)
+                
+                # 如果RGB值变化很小（标准差小于10），认为是纯色背景
+                if rgb_std < 10:
+                    # 检查是否为白色或浅灰色背景
+                    if rgb_min > 240:  # 接近白色
+                        print(f'⚠️ 检测到白色/浅灰色背景，设为透明')
+                        return Image.new('RGBA', composed.size, (0, 0, 0, 0))
+                    elif rgb_min > 200:  # 浅灰色
+                        print(f'⚠️ 检测到浅灰色背景，设为透明')
+                        return Image.new('RGBA', composed.size, (0, 0, 0, 0))
+                
+                # 检查是否为特定灰色值（常见的PSD背景色）
+                gray_values = [128, 192, 224, 240]  # 常见的灰色值
+                for gray_val in gray_values:
+                    if np.all(np.abs(rgb_channels - gray_val) < 5):
+                        print(f'⚠️ 检测到灰色背景 (值: {gray_val})，设为透明')
+                        return Image.new('RGBA', composed.size, (0, 0, 0, 0))
+            
+            # 如果有透明度，检查是否大部分区域是透明的
+            transparent_pixels = np.sum(alpha_channel < 10)
+            total_pixels = alpha_channel.size
+            transparent_ratio = transparent_pixels / total_pixels
+            
+            if transparent_ratio > 0.8:  # 80%以上是透明的
+                print(f'⚠️ 图层 {transparent_ratio:.2%} 透明，可能为空图层')
+                return Image.new('RGBA', composed.size, (0, 0, 0, 0))
+            
+            return composed
+        else:
+            # 非RGBA图像，转换为RGBA
+            return composed.convert('RGBA')
+            
+    except Exception as e:
+        print(f'⚠️ 透明合成失败: {e}')
+        import traceback
+        traceback.print_exc()
+        return None
+
+
 def _extract_layers_info(psd: PSDImage, file_id: str) -> List[Dict[str, Any]]:
     """
     提取所有图层（含群组內子层、文字层）的信息並保存圖層圖像。
@@ -282,7 +389,9 @@ def _extract_layers_info(psd: PSDImage, file_id: str) -> List[Dict[str, Any]]:
             except Exception:
                 pass
 
-            composed = layer.composite()
+            # 使用专门的透明合成函数
+            composed = _composite_layer_with_transparency(layer)
+                
             if composed is not None:
                 # 若原始寬高為 0（常見於群組），以合成圖像大小回填
                 if not layer_info['width'] or not layer_info['height']:
@@ -290,7 +399,7 @@ def _extract_layers_info(psd: PSDImage, file_id: str) -> List[Dict[str, Any]]:
                     layer_info['width'] = w
                     layer_info['height'] = h
 
-                # 檢查圖像是否為空（全透明或全白）
+                # 檢查圖像是否為空（全透明）
                 import numpy as np
                 img_array = np.array(composed)
                 
@@ -298,19 +407,25 @@ def _extract_layers_info(psd: PSDImage, file_id: str) -> List[Dict[str, Any]]:
                 has_content = False
                 if len(img_array.shape) == 3:  # RGB/RGBA
                     if img_array.shape[2] == 4:  # RGBA
-                        # 檢查alpha通道
-                        has_content = np.any(img_array[:, :, 3] > 0)
-                    else:  # RGB
-                        # 檢查是否有非白色像素
+                        # 檢查alpha通道，只考虑真正有内容的像素
+                        has_content = np.any(img_array[:, :, 3] > 10)  # 降低阈值，避免半透明像素被忽略
+                    else:  # RGB - 这种情况不应该出现，因为PSD图层应该有alpha通道
+                        # 如果只有RGB，检查是否有非白色像素
                         has_content = not np.all(img_array == 255)
                 elif len(img_array.shape) == 2:  # Grayscale
                     has_content = not np.all(img_array == 255)
 
                 if has_content:
+                    # 确保保存为PNG格式以保持透明度
                     layer_path = os.path.join(PSD_DIR, f'{file_id}_layer_{idx}.png')
+                    
+                    # 如果图像没有alpha通道，转换为RGBA
+                    if composed.mode != 'RGBA':
+                        composed = composed.convert('RGBA')
+                    
                     composed.save(layer_path, format='PNG')
                     layer_info['image_url'] = f'http://localhost:{DEFAULT_PORT}/api/psd/layer/{file_id}/{idx}'
-                    print(f'✅ 成功生成圖層 {idx} ({getattr(layer, "name", "")}) 圖像: {composed.size}')
+                    print(f'✅ 成功生成圖層 {idx} ({getattr(layer, "name", "")}) 圖像: {composed.size}, 模式: {composed.mode}')
                 else:
                     layer_info['image_url'] = None
                     print(f'⚠️ 圖層 {idx} ({getattr(layer, "name", "")}) 為空圖像，跳過')
