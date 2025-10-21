@@ -2,11 +2,12 @@ import React, { useState, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { Upload } from 'lucide-react'
+import { Upload, Layers } from 'lucide-react'
 import { uploadPSD, type PSDUploadResponse } from '@/api/upload'
 import { useCanvas } from '@/contexts/canvas'
 import { ExcalidrawImageElement } from '@excalidraw/excalidraw/element/types'
 import { BinaryFileData } from '@excalidraw/excalidraw/types'
+import { PSDLayerSidebar } from './PSDLayerSidebar'
 
 interface PSDCanvasUploaderProps {
     canvasId: string
@@ -17,6 +18,8 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
     const { t } = useTranslation()
     const { excalidrawAPI } = useCanvas()
     const [uploading, setUploading] = useState(false)
+    const [psdData, setPsdData] = useState<PSDUploadResponse | null>(null)
+    const [showLayerSidebar, setShowLayerSidebar] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     // 分析圖片可視性（平均亮度、透明度、對比），判定是否需要墊底矩形
@@ -73,6 +76,18 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
         async (layer: any, psdFileId: string, offsetX: number = 0, offsetY: number = 0) => {
             if (!excalidrawAPI) {
                 console.error('excalidrawAPI 不可用:', { excalidrawAPI, layer })
+                return
+            }
+
+            // 检查是否已经存在相同的图层（基于PSD文件ID和图层索引）
+            const currentElements = excalidrawAPI.getSceneElements()
+            const existingLayer = currentElements.find(element =>
+                element.customData?.psdFileId === psdFileId &&
+                element.customData?.psdLayerIndex === layer.index
+            )
+
+            if (existingLayer) {
+                console.warn(`图层 "${layer.name}" (索引: ${layer.index}) 已存在，跳过添加`)
                 return
             }
 
@@ -169,7 +184,7 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
                         psdFileId: psdFileId,
                         layerName: layer.name,
                     },
-                    fileId: `psd_layer_${layer.index}` as any,
+                    fileId: `psd_layer_${layer.index}_${psdFileId}_${Date.now()}` as any,
                     link: null,
                     status: 'saved' as const,
                     scale: [1, 1] as [number, number],
@@ -177,7 +192,7 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
                 }
 
                 const binaryFileData: BinaryFileData = {
-                    id: `psd_layer_${layer.index}` as any,
+                    id: `psd_layer_${layer.index}_${psdFileId}_${Date.now()}` as any,
                     mimeType: 'image/png',
                     dataURL: dataURL as any,
                     created: Date.now(),
@@ -250,6 +265,19 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
 
             console.log('開始處理 PSD 數據:', psdData)
             console.log('總圖層數量:', psdData.layers.length)
+
+            // 清理可能存在的重复图层（基于PSD文件ID）
+            const currentElements = excalidrawAPI.getSceneElements()
+            const elementsToKeep = currentElements.filter(element =>
+                !element.customData?.psdFileId || element.customData.psdFileId !== psdData.file_id
+            )
+
+            if (elementsToKeep.length < currentElements.length) {
+                console.log(`清理了 ${currentElements.length - elementsToKeep.length} 個重複的 PSD 圖層`)
+                excalidrawAPI.updateScene({
+                    elements: elementsToKeep,
+                })
+            }
 
             // 詳細記錄每個圖層的狀態
             psdData.layers.forEach((layer, index) => {
@@ -394,7 +422,13 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
             setUploading(true)
             try {
                 const result = await uploadPSD(file)
+                console.log('PSD 上傳結果:', result)
+                console.log('圖層數量:', result.layers?.length)
+                console.log('圖層詳情:', result.layers)
+
                 toast.success('PSD 檔案上傳成功！')
+                setPsdData(result)
+                setShowLayerSidebar(true)
                 onPSDUploaded?.(result)
 
                 // 直接添加所有圖層到畫布，不打開編輯器
@@ -413,6 +447,11 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
         [onPSDUploaded, handleAutoAddLayers]
     )
 
+    const handlePSDUpdate = useCallback((updatedPsdData: PSDUploadResponse) => {
+        setPsdData(updatedPsdData)
+        onPSDUploaded?.(updatedPsdData)
+    }, [onPSDUploaded])
+
     return (
         <>
             <input
@@ -422,16 +461,38 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
                 onChange={handleFileSelect}
                 className="hidden"
             />
-            <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0"
-                title="上傳 PSD 檔案"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-            >
-                <Upload className="h-4 w-4" />
-            </Button>
+            <div className="flex gap-1">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    title="上傳 PSD 檔案"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                >
+                    <Upload className="h-4 w-4" />
+                </Button>
+
+                {psdData && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        title="顯示圖層列表"
+                        onClick={() => setShowLayerSidebar(!showLayerSidebar)}
+                    >
+                        <Layers className="h-4 w-4" />
+                    </Button>
+                )}
+            </div>
+
+            {/* PSD 圖層側邊欄 */}
+            <PSDLayerSidebar
+                psdData={psdData}
+                isVisible={showLayerSidebar}
+                onClose={() => setShowLayerSidebar(false)}
+                onUpdate={handlePSDUpdate}
+            />
         </>
     )
 }

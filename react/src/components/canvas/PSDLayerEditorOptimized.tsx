@@ -211,7 +211,7 @@ export function PSDLayerEditor({ psdData, isOpen, onClose, onUpdate }: PSDLayerE
                             psdFileId: psdData.file_id,
                             layerName: layer.name,
                         },
-                        fileId: `psd_layer_${layer.index}` as any,
+                        fileId: `psd_layer_${layer.index}_${psdData.file_id}_${Date.now()}` as any,
                         link: null,
                         status: 'saved' as const,
                         scale: [1, 1] as [number, number],
@@ -219,7 +219,7 @@ export function PSDLayerEditor({ psdData, isOpen, onClose, onUpdate }: PSDLayerE
                     }
 
                     const binaryFileData: BinaryFileData = {
-                        id: `psd_layer_${layer.index}` as any,
+                        id: `psd_layer_${layer.index}_${psdData.file_id}_${Date.now()}` as any,
                         mimeType: 'image/png',
                         dataURL: dataURL as any,
                         created: Date.now(),
