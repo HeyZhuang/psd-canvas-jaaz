@@ -42,7 +42,7 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
   ]
 
   return (
-    <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 bg-primary-foreground/75 backdrop-blur-lg rounded-lg p-1 shadow-[0_5px_10px_rgba(0,0,0,0.08)] border border-primary/10">
+    <div className="absolute left-5 top-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-1 bg-primary-foreground/75 backdrop-blur-lg rounded-lg p-1 shadow-[0_5px_10px_rgba(0,0,0,0.08)] border border-primary/10">
       {tools.map((tool, index) =>
         tool ? (
           <CanvasMenuButton
@@ -54,16 +54,16 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
         ) : (
           <Separator
             key={index}
-            orientation="vertical"
-            className="h-6! bg-primary/5"
+            orientation="horizontal"
+            className="w-6! bg-primary/5"
           />
         )
       )}
 
       {/* PSD 上傳按鈕 */}
       <Separator
-        orientation="vertical"
-        className="h-6! bg-primary/5"
+        orientation="horizontal"
+        className="w-6! bg-primary/5"
       />
       <PSDCanvasUploader
         canvasId={canvasId}

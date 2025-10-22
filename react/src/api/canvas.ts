@@ -38,7 +38,7 @@ export async function createCanvas(data: {
 
 export async function getCanvas(
   id: string
-): Promise<{ data: CanvasData; name: string; sessions: Session[] }> {
+): Promise<{ data: CanvasData | null; name: string; sessions: Session[] }> {
   try {
     const response = await fetch(`/api/canvas/${id}`)
 

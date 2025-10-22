@@ -605,7 +605,13 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
                 console.log('圖層數量:', result.layers?.length)
                 console.log('圖層詳情:', result.layers)
 
-                toast.success('PSD 檔案上傳成功！')
+                // 检查是否成功创建了模板
+                if (result.template_created && result.template_id) {
+                    toast.success(`PSD 檔案上傳成功！已自動保存為模板 (${result.template_id})`)
+                } else {
+                    toast.success('PSD 檔案上傳成功！')
+                }
+
                 setPsdData(result)
                 setShowLayerSidebar(true)
                 onPSDUploaded?.(result)

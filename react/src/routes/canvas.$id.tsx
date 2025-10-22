@@ -29,6 +29,7 @@ function Canvas() {
 
   // PSD图层侧边栏状态
   const [psdData, setPsdData] = useState<PSDUploadResponse | null>(null)
+  const [isLayerSidebarVisible, setIsLayerSidebarVisible] = useState(false)
   const search = useSearch({ from: '/canvas/$id' }) as {
     sessionId: string
   }
@@ -79,6 +80,10 @@ function Canvas() {
   // PSD数据更新处理
   const handlePSDUpdate = (updatedPsdData: PSDUploadResponse) => {
     setPsdData(updatedPsdData)
+    // 当有PSD数据时，自动显示图层侧边栏
+    if (updatedPsdData) {
+      setIsLayerSidebarVisible(true)
+    }
   }
 
   // 如果有错误，显示错误信息
@@ -139,9 +144,9 @@ function Canvas() {
             <div className='flex-1 flex-grow bg-accent/50 w-full'>
               <PSDLayerSidebar
                 psdData={psdData}
-                isVisible={true}
+                isVisible={isLayerSidebarVisible}
                 onClose={() => {
-                  setPsdData(null)
+                  setIsLayerSidebarVisible(false)
                 }}
                 onUpdate={handlePSDUpdate}
               />

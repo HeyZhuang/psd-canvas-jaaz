@@ -6,10 +6,12 @@ from PIL import Image
 from io import BytesIO
 import os
 import json
+import uuid
 from typing import List, Dict, Any, Optional
 from common import DEFAULT_PORT
 from tools.utils.image_canvas_utils import generate_file_id
 from services.config_service import FILES_DIR
+from datetime import datetime
 
 router = APIRouter(prefix="/api/psd")
 
@@ -17,11 +19,137 @@ router = APIRouter(prefix="/api/psd")
 PSD_DIR = os.path.join(FILES_DIR, "psd")
 os.makedirs(PSD_DIR, exist_ok=True)
 
+# 模板数据库配置
+TEMPLATE_DB_URL = "sqlite:///./user_data/templates.db"
+from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, JSON, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session, relationship
+
+template_engine = create_engine(TEMPLATE_DB_URL)
+TemplateSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=template_engine)
+TemplateBase = declarative_base()
+
+# 模板数据库模型
+class TemplateCategory(TemplateBase):
+    __tablename__ = "template_categories"
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    icon = Column(String, nullable=True)
+    color = Column(String, nullable=True, default="#3b82f6")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class TemplateItem(TemplateBase):
+    __tablename__ = "template_items"
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    category_id = Column(String, ForeignKey("template_categories.id"), nullable=False)
+    type = Column(String, nullable=False)  # psd_file, psd_layer, image, text_style, layer_group, canvas_element
+    thumbnail_url = Column(String, nullable=True)
+    preview_url = Column(String, nullable=True)
+    template_metadata = Column(JSON, nullable=True)
+    tags = Column(JSON, nullable=True, default=list)
+    usage_count = Column(Integer, default=0)
+    is_favorite = Column(Boolean, default=False)
+    is_public = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = Column(String, nullable=True)
+    
+    # 关系
+    category = relationship("TemplateCategory", backref="templates")
+
+# 创建模板数据库表
+TemplateBase.metadata.create_all(bind=template_engine)
+
+def get_template_db():
+    db = TemplateSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+async def _create_psd_file_template(
+    file_id: str,
+    filename: str,
+    width: int,
+    height: int,
+    layers_count: int,
+    thumbnail_url: str,
+    layers_info: List[Dict[str, Any]]
+) -> str:
+    """
+    为PSD文件自动创建模板
+    """
+    db = TemplateSessionLocal()
+    try:
+        # 获取或创建默认分类
+        default_category = db.query(TemplateCategory).filter(
+            TemplateCategory.name == "PSD文件"
+        ).first()
+        
+        if not default_category:
+            default_category = TemplateCategory(
+                name="PSD文件",
+                description="从PSD文件自动创建的模板分类",
+                icon="📁",
+                color="#3b82f6"
+            )
+            db.add(default_category)
+            db.commit()
+            db.refresh(default_category)
+        
+        # 创建模板名称（去掉.psd扩展名）
+        template_name = filename.replace('.psd', '').replace('.PSD', '')
+        
+        # 创建模板元数据
+        template_metadata = {
+            "psd_file_id": file_id,
+            "original_filename": filename,
+            "width": width,
+            "height": height,
+            "layers_count": layers_count,
+            "layers_info": layers_info,
+            "file_type": "psd_file",
+            "created_from": "auto_upload"
+        }
+        
+        # 创建模板
+        template = TemplateItem(
+            name=template_name,
+            description=f"PSD文件模板 - {layers_count}个图层，尺寸: {width}x{height}",
+            category_id=default_category.id,
+            type="psd_file",
+            thumbnail_url=thumbnail_url,
+            preview_url=thumbnail_url,
+            template_metadata=template_metadata,
+            tags=["psd", "文件", "自动创建"],
+            is_public=False,
+            is_favorite=False,
+            usage_count=0
+        )
+        
+        db.add(template)
+        db.commit()
+        db.refresh(template)
+        
+        return template.id
+        
+    except Exception as e:
+        db.rollback()
+        raise e
+    finally:
+        db.close()
+
 
 @router.post("/upload")
 async def upload_psd(file: UploadFile = File(...)):
     """
-    上传PSD文件并解析其图层结构
+    上传PSD文件并解析其图层结构，同时自动创建模板
     
     Returns:
         {
@@ -30,7 +158,9 @@ async def upload_psd(file: UploadFile = File(...)):
             "width": int,
             "height": int,
             "layers": List[Dict],  # 图层信息列表
-            "thumbnail_url": str
+            "thumbnail_url": str,
+            "template_id": str,  # 自动创建的模板ID
+            "template_created": bool  # 是否成功创建模板
         }
     """
     print(f'🎨 Uploading PSD file: {file.filename}')
@@ -71,13 +201,34 @@ async def upload_psd(file: UploadFile = File(...)):
                 'original_filename': file.filename
             }, f, ensure_ascii=False, indent=2)
         
+        # 自动创建PSD文件模板
+        template_id = None
+        template_created = False
+        try:
+            template_id = await _create_psd_file_template(
+                file_id=file_id,
+                filename=file.filename,
+                width=width,
+                height=height,
+                layers_count=len(layers_info),
+                thumbnail_url=thumbnail_url,
+                layers_info=layers_info
+            )
+            template_created = True
+            print(f'✅ PSD文件模板创建成功: {template_id}')
+        except Exception as e:
+            print(f'⚠️ 创建PSD文件模板失败: {e}')
+            # 不影响主流程，继续返回PSD上传结果
+        
         return {
             'file_id': file_id,
             'url': f'http://localhost:{DEFAULT_PORT}/api/psd/file/{file_id}',
             'width': width,
             'height': height,
             'layers': layers_info,
-            'thumbnail_url': thumbnail_url
+            'thumbnail_url': thumbnail_url,
+            'template_id': template_id,
+            'template_created': template_created
         }
         
     except Exception as e:
@@ -681,3 +832,113 @@ async def get_thumbnail(file_id: str):
     if not os.path.exists(thumbnail_path):
         raise HTTPException(status_code=404, detail="Thumbnail not found")
     return FileResponse(thumbnail_path)
+
+
+@router.get("/template/{template_id}/layers")
+async def get_psd_template_layers(template_id: str):
+    """
+    获取PSD模板的图层信息
+    
+    Args:
+        template_id: 模板ID
+    
+    Returns:
+        图层信息列表
+    """
+    db = TemplateSessionLocal()
+    try:
+        # 查找模板
+        template = db.query(TemplateItem).filter(TemplateItem.id == template_id).first()
+        if not template:
+            raise HTTPException(status_code=404, detail="Template not found")
+        
+        if template.type != "psd_file":
+            raise HTTPException(status_code=400, detail="Template is not a PSD file")
+        
+        # 获取PSD文件ID
+        psd_file_id = template.template_metadata.get("psd_file_id")
+        if not psd_file_id:
+            raise HTTPException(status_code=404, detail="PSD file ID not found in template metadata")
+        
+        # 读取PSD元数据
+        metadata_path = os.path.join(PSD_DIR, f'{psd_file_id}_metadata.json')
+        if not os.path.exists(metadata_path):
+            raise HTTPException(status_code=404, detail="PSD metadata not found")
+        
+        with open(metadata_path, 'r', encoding='utf-8') as f:
+            metadata = json.load(f)
+        
+        return {
+            "template_id": template_id,
+            "template_name": template.name,
+            "psd_file_id": psd_file_id,
+            "width": metadata["width"],
+            "height": metadata["height"],
+            "layers": metadata["layers"],
+            "original_filename": metadata["original_filename"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting PSD template layers: {str(e)}")
+    finally:
+        db.close()
+
+
+@router.post("/template/{template_id}/apply")
+async def apply_psd_template(template_id: str, canvas_id: str = None):
+    """
+    应用PSD模板到画布
+    
+    Args:
+        template_id: 模板ID
+        canvas_id: 画布ID（可选）
+    
+    Returns:
+        应用结果
+    """
+    db = TemplateSessionLocal()
+    try:
+        # 查找模板
+        template = db.query(TemplateItem).filter(TemplateItem.id == template_id).first()
+        if not template:
+            raise HTTPException(status_code=404, detail="Template not found")
+        
+        if template.type != "psd_file":
+            raise HTTPException(status_code=400, detail="Template is not a PSD file")
+        
+        # 增加使用次数
+        template.usage_count += 1
+        template.updated_at = datetime.utcnow()
+        db.commit()
+        
+        # 获取PSD文件ID
+        psd_file_id = template.template_metadata.get("psd_file_id")
+        if not psd_file_id:
+            raise HTTPException(status_code=404, detail="PSD file ID not found in template metadata")
+        
+        # 读取PSD元数据
+        metadata_path = os.path.join(PSD_DIR, f'{psd_file_id}_metadata.json')
+        if not os.path.exists(metadata_path):
+            raise HTTPException(status_code=404, detail="PSD metadata not found")
+        
+        with open(metadata_path, 'r', encoding='utf-8') as f:
+            metadata = json.load(f)
+        
+        return {
+            "success": True,
+            "message": f"PSD模板 '{template.name}' 已应用到画布",
+            "template_id": template_id,
+            "psd_file_id": psd_file_id,
+            "canvas_id": canvas_id,
+            "layers": metadata["layers"],
+            "usage_count": template.usage_count
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error applying PSD template: {str(e)}")
+    finally:
+        db.close()

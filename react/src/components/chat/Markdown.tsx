@@ -14,10 +14,17 @@ type MarkdownProps = {
 const NonMemoizedMarkdown: React.FC<MarkdownProps> = ({ children }) => {
   const { excalidrawAPI } = useCanvas()
   const files = excalidrawAPI?.getFiles()
-  const filesArray = Object.keys(files || {}).map((key) => ({
-    id: key,
-    url: files![key].dataURL,
-  }))
+  const filesArray = Object.keys(files || {}).map((key) => {
+    const file = files![key]
+    if (!file || !file.dataURL) {
+      console.warn(`File not found for key ${key}`)
+      return null
+    }
+    return {
+      id: key,
+      url: file.dataURL,
+    }
+  }).filter((item): item is NonNullable<typeof item> => item !== null)
 
   const { t } = useTranslation()
   const [isThinkExpanded, setIsThinkExpanded] = useState(false)

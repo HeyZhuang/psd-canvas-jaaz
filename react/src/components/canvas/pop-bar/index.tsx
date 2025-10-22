@@ -50,6 +50,10 @@ const CanvasPopbarWrapper = () => {
       .filter((image) => image.fileId)
       .map((image) => {
         const file = files[image.fileId!]
+        if (!file || !file.dataURL) {
+          console.warn(`File not found for image ${image.fileId}`)
+          return null
+        }
         const isBase64 = file.dataURL.startsWith('data:')
         const id = isBase64 ? file.id : file.dataURL.split('/').at(-1)!
         return {
@@ -59,6 +63,7 @@ const CanvasPopbarWrapper = () => {
           height: image.height,
         }
       })
+      .filter((item): item is NonNullable<typeof item> => item !== null)
 
     // 处理选中的元素数据
     selectedElementsRef.current = elements.filter(

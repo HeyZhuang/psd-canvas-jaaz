@@ -48,6 +48,8 @@ export interface PSDUploadResponse {
   height: number
   layers: PSDLayer[]
   thumbnail_url: string
+  template_id?: string  // 自动创建的模板ID
+  template_created?: boolean  // 是否成功创建模板
 }
 
 export async function uploadPSD(file: File): Promise<PSDUploadResponse> {
@@ -146,6 +148,29 @@ export async function exportPSD(fileId: string, format: 'png' | 'jpg') {
   })
   if (!response.ok) {
     throw new Error(`Failed to export PSD: ${response.statusText}`)
+  }
+  return await response.json()
+}
+
+// PSD模板相关API
+export async function getPSDTemplateLayers(templateId: string) {
+  const response = await fetch(`/api/psd/template/${templateId}/layers`)
+  if (!response.ok) {
+    throw new Error(`Failed to get PSD template layers: ${response.statusText}`)
+  }
+  return await response.json()
+}
+
+export async function applyPSDTemplate(templateId: string, canvasId?: string) {
+  const response = await fetch(`/api/psd/template/${templateId}/apply`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ canvas_id: canvasId }),
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to apply PSD template: ${response.statusText}`)
   }
   return await response.json()
 }

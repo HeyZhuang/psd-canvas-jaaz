@@ -28,12 +28,16 @@ import {
     Bold,
     Italic,
     Underline,
+    Bookmark,
+    Star,
 } from 'lucide-react'
 import {
     updateLayerProperties,
     type PSDLayer
 } from '@/api/upload'
 import { useCanvas } from '@/contexts/canvas'
+import { TemplateManager } from '@/components/template/TemplateManager'
+import { createTemplateFromPSDLayer } from '@/api/template'
 
 interface PSDLayerSidebarProps {
     psdData: {
@@ -59,6 +63,7 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
     const [currentCanvas, setCurrentCanvas] = useState(0)
     const [canvasElements, setCanvasElements] = useState<any[]>([])
     const [lastUpdateTime, setLastUpdateTime] = useState<number>(0)
+    const [showTemplateManager, setShowTemplateManager] = useState(false)
 
     // 监听画布变化，实时同步图层状态
     useEffect(() => {
@@ -82,7 +87,7 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
         updateCanvasElements()
 
         // 监听画布变化事件
-        const unsubscribe = excalidrawAPI.on?.('change', updateCanvasElements) || null
+        const unsubscribe = (excalidrawAPI as any).on?.('change', updateCanvasElements) || null
 
         // 定期检查更新（作为备用机制）
         const interval = setInterval(updateCanvasElements, 1000)
@@ -372,6 +377,25 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
         [psdData, excalidrawAPI, getLayerCanvasState, onUpdate]
     )
 
+    // 保存图层为模板
+    const handleSaveLayerAsTemplate = useCallback(async (layer: PSDLayer) => {
+        try {
+            const templateData = {
+                name: `${layer.name} - 模板`,
+                description: `从PSD图层 "${layer.name}" 创建的模板`,
+                category_id: 'default', // 默认分类，实际应用中应该让用户选择
+                tags: ['psd', 'layer', layer.type],
+                is_public: false,
+            }
+
+            await createTemplateFromPSDLayer(psdData!.file_id, layer.index, templateData)
+            toast.success(`图层 "${layer.name}" 已保存为模板`)
+        } catch (error) {
+            console.error('保存模板失败:', error)
+            toast.error('保存模板失败')
+        }
+    }, [psdData])
+
     // 获取图层图标
     const getLayerIcon = (layer: PSDLayer) => {
         switch (layer.type) {
@@ -398,30 +422,27 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
 
     console.log('PSDLayerSidebar 渲染狀態:', { isVisible, psdData: !!psdData, layersCount: psdData?.layers?.length })
 
+    // 如果不可见，直接返回null
+    if (!isVisible) {
+        return null
+    }
+
     if (!psdData) {
         console.log('PSDLayerSidebar 沒有 PSD 數據')
-        return (
-            <div className="h-full w-full bg-background flex flex-col items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                    <Layers className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium">沒有 PSD 文件</p>
-                    <p className="text-sm">請先上傳 PSD 文件</p>
-                </div>
-            </div>
-        )
+        return null
     }
 
     return (
         <div
             className="fixed top-4 right-4 z-50 bg-background/95 backdrop-blur-sm border rounded-lg shadow-lg cursor-move"
             style={{
-                width: '320px',
+                width: '360px',
                 maxHeight: '80vh'
             }}
         >
             {/* 浮动面板头部 - 可拖拽 */}
             <div
-                className="flex items-center justify-between p-2 border-b cursor-move"
+                className="flex items-center justify-between p-2 border-b cursor-move min-w-0"
                 onMouseDown={(e) => {
                     // 简单的拖拽实现
                     const startX = e.clientX
@@ -449,17 +470,27 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
                     document.addEventListener('mouseup', handleMouseUp)
                 }}
             >
-                <div className="flex items-center gap-2">
-                    <Layers className="h-4 w-4" />
-                    <span className="text-sm font-medium">图层列表</span>
-                    <Badge variant="secondary" className="text-xs">
+                <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
+                    <Layers className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-sm font-medium whitespace-nowrap">图层列表</span>
+                    <Badge variant="secondary" className="text-xs flex-shrink-0">
                         {filteredLayers.length}
                     </Badge>
-                    <Badge variant="outline" className="text-xs text-green-600">
+                    <Badge variant="outline" className="text-xs text-green-600 flex-shrink-0">
                         实时同步
                     </Badge>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                    {/* 模板管理按钮 */}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 px-1.5 text-xs"
+                        onClick={() => setShowTemplateManager(true)}
+                        title="模板管理"
+                    >
+                        <Star className="h-3 w-3" />
+                    </Button>
                     {/* 刷新按钮 */}
                     <Button
                         variant="ghost"
@@ -495,23 +526,23 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
                     </Button>
 
                     {/* 画布切换 */}
-                    <div className="flex items-center gap-1 mr-2">
+                    <div className="flex items-center gap-1">
                         <Button
                             variant="outline"
                             size="sm"
-                            className="h-6 px-2 text-xs"
+                            className="h-6 w-6 p-0 text-xs"
                             onClick={() => setCurrentCanvas(Math.max(0, currentCanvas - 1))}
                             disabled={currentCanvas === 0}
                         >
                             ←
                         </Button>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
                             画布 {currentCanvas + 1}
                         </span>
                         <Button
                             variant="outline"
                             size="sm"
-                            className="h-6 px-2 text-xs"
+                            className="h-6 w-6 p-0 text-xs"
                             onClick={() => setCurrentCanvas(currentCanvas + 1)}
                         >
                             →
@@ -648,6 +679,16 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
                                                     <Edit3 className="h-3 w-3" />
                                                 </Button>
                                             )}
+
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-6 w-6 p-0"
+                                                onClick={() => handleSaveLayerAsTemplate(layer)}
+                                                title="保存为模板"
+                                            >
+                                                <Bookmark className="h-3 w-3" />
+                                            </Button>
                                         </div>
                                     </div>
                                 )
@@ -740,6 +781,16 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
                     </div>
                 )}
             </div>
+
+            {/* 模板管理器 */}
+            <TemplateManager
+                isOpen={showTemplateManager}
+                onClose={() => setShowTemplateManager(false)}
+                onApplyTemplate={(template) => {
+                    console.log('应用模板:', template)
+                    toast.success(`模板 "${template.name}" 已应用到画布`)
+                }}
+            />
         </div>
     )
 }

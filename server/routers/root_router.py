@@ -11,6 +11,7 @@ from utils.http_client import HttpClient
 from models.config_model import ModelInfo
 from typing import List
 from services.tool_service import TOOL_MAPPING
+from routers.template_router import router as template_router
 
 router = APIRouter(prefix="/api")
 
@@ -138,3 +139,6 @@ async def list_chat_sessions():
 @router.get("/chat_session/{session_id}")
 async def get_chat_session(session_id: str):
     return await db_service.get_chat_history(session_id)
+
+# 包含模板路由
+router.include_router(template_router)
