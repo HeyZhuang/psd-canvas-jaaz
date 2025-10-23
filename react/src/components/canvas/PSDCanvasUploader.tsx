@@ -2,12 +2,14 @@ import React, { useState, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { Upload, Layers, X } from 'lucide-react'
+import { Upload } from 'lucide-react'
 import { uploadPSD, type PSDUploadResponse } from '@/api/upload'
 import { useCanvas } from '@/contexts/canvas'
 import { ExcalidrawImageElement } from '@excalidraw/excalidraw/element/types'
 import { BinaryFileData } from '@excalidraw/excalidraw/types'
-import { PSDLayerSidebar } from './PSDLayerSidebar'
+import { PSDSaveToTemplateDialog } from '../template/PSDSaveToTemplateDialog'
+import { getTemplateCategories } from '@/api/template'
+import type { TemplateCategory } from '@/types/types'
 
 interface PSDCanvasUploaderProps {
     canvasId: string
@@ -19,8 +21,19 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
     const { excalidrawAPI } = useCanvas()
     const [uploading, setUploading] = useState(false)
     const [psdData, setPsdData] = useState<PSDUploadResponse | null>(null)
-    const [showLayerSidebar, setShowLayerSidebar] = useState(false)
+    const [showSaveDialog, setShowSaveDialog] = useState(false)
+    const [templateCategories, setTemplateCategories] = useState<TemplateCategory[]>([])
     const fileInputRef = useRef<HTMLInputElement>(null)
+
+    // 加载模板分类
+    const loadTemplateCategories = useCallback(async () => {
+        try {
+            const categories = await getTemplateCategories()
+            setTemplateCategories(categories)
+        } catch (error) {
+            console.error('加载模板分类失败:', error)
+        }
+    }, [])
 
     // 全局清理重复图层
     const cleanupDuplicateLayers = useCallback(() => {
@@ -605,22 +618,25 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
                 console.log('圖層數量:', result.layers?.length)
                 console.log('圖層詳情:', result.layers)
 
-                // 检查是否成功创建了模板
-                if (result.template_created && result.template_id) {
-                    toast.success(`PSD 檔案上傳成功！已自動保存為模板 (${result.template_id})`)
-                } else {
-                    toast.success('PSD 檔案上傳成功！')
-                }
-
                 setPsdData(result)
-                setShowLayerSidebar(true)
                 onPSDUploaded?.(result)
 
                 // 直接添加所有圖層到畫布，不打開編輯器
                 await handleAutoAddLayers(result)
+
+                // 加载模板分类并弹出保存对话框
+                await loadTemplateCategories()
+                setShowSaveDialog(true)
+
+                toast.success('PSD 檔案上傳成功！')
             } catch (error) {
                 console.error('上傳失敗:', error)
-                toast.error('上傳 PSD 檔案失敗')
+                // 提供更详细的错误信息
+                let errorMessage = '上傳 PSD 檔案失敗'
+                if (error instanceof Error) {
+                    errorMessage = `上傳 PSD 檔案失敗: ${error.message}`
+                }
+                toast.error(errorMessage)
             } finally {
                 setUploading(false)
                 // 清空文件輸入，允許重複選擇同一個文件
@@ -657,27 +673,8 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
                 >
                     <Upload className="h-4 w-4" />
                 </Button>
-
-                {psdData && (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        title="顯示圖層列表"
-                        onClick={() => setShowLayerSidebar(!showLayerSidebar)}
-                    >
-                        <Layers className="h-4 w-4" />
-                    </Button>
-                )}
             </div>
 
-            {/* PSD 圖層側邊欄 */}
-            <PSDLayerSidebar
-                psdData={psdData}
-                isVisible={showLayerSidebar}
-                onClose={() => setShowLayerSidebar(false)}
-                onUpdate={handlePSDUpdate}
-            />
         </>
     )
 }

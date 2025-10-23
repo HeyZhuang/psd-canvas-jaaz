@@ -42,7 +42,7 @@ import {
     Palette,
 } from 'lucide-react'
 import { TemplateItem, TemplateCategory } from '@/types/types'
-import { getTemplates, getTemplateCategories, applyTemplateToCanvas } from '@/api/template'
+import { getTemplates, getTemplateCategories } from '@/api/template'
 import { applyTemplateToExcalidraw } from '@/utils/templateCanvas'
 import { useCanvas } from '@/contexts/canvas'
 
@@ -92,12 +92,9 @@ export function BottomTemplateToolbar({
         }
 
         try {
-            // 调用后端API应用模板
-            const result = await applyTemplateToCanvas(template.id, currentCanvasId)
-
-            // 在Excalidraw画布上显示模板
+            // 直接在Excalidraw画布上显示模板
             if (excalidrawAPI) {
-                applyTemplateToExcalidraw(excalidrawAPI, result)
+                await applyTemplateToExcalidraw(excalidrawAPI, template)
             }
 
             toast.success('模板已应用到画布')
@@ -133,7 +130,7 @@ export function BottomTemplateToolbar({
     if (!isVisible) return null
 
     return (
-        <div className="fixed left-0 top-0 bottom-0 z-50 bg-background border-r shadow-lg w-80 flex flex-col">
+        <div className="fixed left-0 top-0 bottom-0 z-[9999] bg-background border-r shadow-lg w-80 flex flex-col" style={{ zIndex: 9999 }}>
             {/* 工具栏头部 */}
             <div className="flex items-center justify-between p-3 bg-muted/50 border-b">
                 <div className="flex items-center gap-2">

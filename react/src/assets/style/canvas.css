@@ -64,6 +64,17 @@
   z-index: 60 !important;
 }
 
+/* 确保模板管理浮动模式始终在Excalidraw之上 */
+.template-floating {
+  z-index: 999999 !important;
+  position: fixed !important;
+}
+
+/* 强制覆盖Excalidraw的所有z-index */
+.template-floating * {
+  z-index: inherit !important;
+}
+
 .excalidraw .popover .context-menu {
   border-radius: 10px !important;
   border-color: color-mix(in oklab, var(--primary) 10%, transparent) !important;
@@ -183,4 +194,62 @@
   filter: none !important;
   color: #f5f5f5 !important;
   background-color: #333333 !important;
+}
+
+/* 字体选择功能样式 */
+.excalidraw {
+  font-family: var(--excalidraw-font-family, 'Arial') !important;
+}
+
+/* 确保文本元素使用选择的字体 */
+.excalidraw .excalidraw-element[data-type="text"] {
+  font-family: var(--excalidraw-font-family, 'Arial') !important;
+}
+
+/* 确保文本输入框使用选择的字体 */
+.excalidraw .Layer_textarea {
+  font-family: var(--excalidraw-font-family, 'Arial') !important;
+}
+
+/* 确保文本编辑时的字体正确 */
+.excalidraw .text-editor {
+  font-family: var(--excalidraw-font-family, 'Arial') !important;
+}
+
+/* 字体选择器滚动条样式 */
+.font-selector-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.font-selector-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.font-selector-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+
+.font-selector-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.font-selector-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* 深色模式下的滚动条样式 */
+.dark .font-selector-scrollbar {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.dark .font-selector-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dark .font-selector-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }

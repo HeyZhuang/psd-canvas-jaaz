@@ -60,7 +60,6 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
     const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set())
     const [searchTerm, setSearchTerm] = useState('')
     const [filterType, setFilterType] = useState<'all' | 'text' | 'layer' | 'group'>('all')
-    const [currentCanvas, setCurrentCanvas] = useState(0)
     const [canvasElements, setCanvasElements] = useState<any[]>([])
     const [lastUpdateTime, setLastUpdateTime] = useState<number>(0)
     const [showTemplateManager, setShowTemplateManager] = useState(false)
@@ -525,29 +524,6 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
                         <div className="h-3 w-3 border border-current rounded-full animate-spin"></div>
                     </Button>
 
-                    {/* 画布切换 */}
-                    <div className="flex items-center gap-1">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 w-6 p-0 text-xs"
-                            onClick={() => setCurrentCanvas(Math.max(0, currentCanvas - 1))}
-                            disabled={currentCanvas === 0}
-                        >
-                            ←
-                        </Button>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            画布 {currentCanvas + 1}
-                        </span>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 w-6 p-0 text-xs"
-                            onClick={() => setCurrentCanvas(currentCanvas + 1)}
-                        >
-                            →
-                        </Button>
-                    </div>
 
                     <Button
                         variant="ghost"

@@ -7,6 +7,7 @@ from io import BytesIO
 import os
 import json
 import uuid
+import numpy as np
 from typing import List, Dict, Any, Optional
 from common import DEFAULT_PORT
 from tools.utils.image_canvas_utils import generate_file_id
@@ -371,7 +372,6 @@ def _composite_layer_with_transparency(layer) -> Optional[Image.Image]:
     """
     try:
         from PIL import Image
-        import numpy as np
         
         # 获取图层尺寸
         width = getattr(layer, 'width', 0)
@@ -551,7 +551,6 @@ def _extract_layers_info(psd: PSDImage, file_id: str) -> List[Dict[str, Any]]:
                     layer_info['height'] = h
 
                 # 檢查圖像是否為空（全透明）
-                import numpy as np
                 img_array = np.array(composed)
                 
                 # 檢查是否有非透明像素

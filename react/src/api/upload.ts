@@ -48,6 +48,7 @@ export interface PSDUploadResponse {
   height: number
   layers: PSDLayer[]
   thumbnail_url: string
+  original_filename?: string  // 添加原始文件名
   template_id?: string  // 自动创建的模板ID
   template_created?: boolean  // 是否成功创建模板
 }

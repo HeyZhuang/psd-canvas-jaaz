@@ -26,9 +26,15 @@ langgraph-sdk==0.1.70
 langgraph-swarm==0.0.11
 langchain-ollama==0.3.3
 langchain-openai==0.3.21
+langchain-core
 python-socketio==5.13.0
 pymediainfo
 openai-agents
 socksio # For vpn from command line like export https_proxy=http://127.0.0.1:7897 http_proxy=http://127.0.0.1:7897 all_proxy=socks5://127.0.0.1:7897
 piexif # For EXIF metadata handling in JPEG files
 psd-tools # For PSD file parsing and layer extraction 
+fonttools # For font file parsing and metadata extraction
+sqlalchemy # For database operations
+google-genai # For Gemini API integration
+langsmith # Fix langchain dependency issue
+numpy # For PSD layer image processing

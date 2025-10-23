@@ -1,7 +1,6 @@
 import { Input } from '@/components/ui/input'
 import CanvasExport from './CanvasExport'
 import { PSDCanvasUploader } from './PSDCanvasUploader'
-import { TemplateButton } from '@/components/template/TemplateButton'
 import TopMenu from '../TopMenu'
 
 type CanvasHeaderProps = {
@@ -11,6 +10,7 @@ type CanvasHeaderProps = {
   onNameSave: () => void
   psdData?: any
   onPSDUpdate?: (psdData: any) => void
+  onApplyTemplate?: (template: any) => void
 }
 
 const CanvasHeader: React.FC<CanvasHeaderProps> = ({
@@ -20,6 +20,7 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
   onNameSave,
   psdData,
   onPSDUpdate,
+  onApplyTemplate,
 }) => {
   return (
     <TopMenu
@@ -33,7 +34,6 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
       }
       right={
         <div className="flex items-center gap-2">
-          <TemplateButton />
           <PSDCanvasUploader
             canvasId={canvasId}
             onPSDUploaded={onPSDUpdate}

@@ -68,10 +68,10 @@ import {
     incrementTemplateUsage,
     searchTemplates,
     getTemplateStats,
-    applyTemplateToCanvas,
 } from '@/api/template'
 import { applyTemplateToExcalidraw } from '@/utils/templateCanvas'
 import { useCanvas } from '@/contexts/canvas'
+import { FontManager } from '@/components/font/FontManager'
 import { TemplateCard } from './TemplateCard'
 import { TemplateUploadDialog } from './TemplateUploadDialog'
 import { TemplateCategoryManager } from './TemplateCategoryManager'
@@ -110,11 +110,23 @@ export function TemplateManager({
     const [showFilters, setShowFilters] = useState(false)
     const [activeTab, setActiveTab] = useState<'templates' | 'collections' | 'categories'>('templates')
     const [stats, setStats] = useState<any>(null)
+    const [showFontManager, setShowFontManager] = useState(false)
 
     // 新增状态：浮动栏和底部工具栏
     const [isFloating, setIsFloating] = useState(false)
     const [isMinimized, setIsMinimized] = useState(false)
-    const [floatingPosition, setFloatingPosition] = useState({ x: 100, y: 100 })
+    const [floatingPosition, setFloatingPosition] = useState(() => {
+        // 从localStorage恢复位置
+        const saved = localStorage.getItem('template-manager-floating-position')
+        if (saved) {
+            try {
+                return JSON.parse(saved)
+            } catch {
+                return { x: 100, y: 100 }
+            }
+        }
+        return { x: 100, y: 100 }
+    })
     const [isDragging, setIsDragging] = useState(false)
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
@@ -168,18 +180,13 @@ export function TemplateManager({
 
     // 模板操作
     const handleApplyTemplate = useCallback(async (template: TemplateItem) => {
-        if (!currentCanvasId) {
-            toast.error('请先选择一个画布')
-            return
-        }
-
         try {
-            // 调用后端API应用模板
-            const result = await applyTemplateToCanvas(template.id, currentCanvasId)
-
-            // 在Excalidraw画布上显示模板
+            // 直接在Excalidraw画布上显示模板
             if (excalidrawAPI) {
-                applyTemplateToExcalidraw(excalidrawAPI, result)
+                await applyTemplateToExcalidraw(excalidrawAPI, template)
+            } else {
+                toast.error('画布未初始化，请刷新页面重试')
+                return
             }
 
             // 更新使用次数
@@ -191,7 +198,7 @@ export function TemplateManager({
             console.error('Failed to apply template:', error)
             toast.error('应用模板失败')
         }
-    }, [currentCanvasId, onApplyTemplate, excalidrawAPI])
+    }, [onApplyTemplate, excalidrawAPI])
 
     const handleToggleFavorite = useCallback(async (templateId: string) => {
         try {
@@ -277,15 +284,33 @@ export function TemplateManager({
 
     const handleMouseMove = useCallback((e: MouseEvent) => {
         if (!isDragging || !isFloating) return
+
+        const newX = e.clientX - dragStart.x
+        const newY = e.clientY - dragStart.y
+
+        // 获取窗口尺寸
+        const windowWidth = window.innerWidth
+        const windowHeight = window.innerHeight
+
+        // 浮动窗口尺寸
+        const floatingWidth = isMinimized ? 320 : 384 // w-80 = 320px, w-96 = 384px
+        const floatingHeight = isMinimized ? 48 : 600
+
+        // 边界检测
+        const boundedX = Math.max(0, Math.min(newX, windowWidth - floatingWidth))
+        const boundedY = Math.max(0, Math.min(newY, windowHeight - floatingHeight))
+
         setFloatingPosition({
-            x: e.clientX - dragStart.x,
-            y: e.clientY - dragStart.y
+            x: boundedX,
+            y: boundedY
         })
-    }, [isDragging, isFloating, dragStart])
+    }, [isDragging, isFloating, dragStart, isMinimized])
 
     const handleMouseUp = useCallback(() => {
         setIsDragging(false)
-    }, [])
+        // 保存位置到localStorage
+        localStorage.setItem('template-manager-floating-position', JSON.stringify(floatingPosition))
+    }, [floatingPosition])
 
     useEffect(() => {
         if (isDragging) {
@@ -319,30 +344,29 @@ export function TemplateManager({
     if (isFloating) {
         return (
             <div
-                className={`fixed z-50 bg-background border rounded-lg shadow-lg transition-all duration-200 ${isMinimized ? 'w-80 h-12' : 'w-96 h-[600px]'
-                    }`}
+                className={`fixed template-floating bg-background border rounded-lg shadow-lg transition-all duration-300 ease-in-out ${isMinimized ? 'w-80 h-12' : 'w-96 h-[600px]'
+                    } hover:shadow-xl`}
                 style={{
                     left: floatingPosition.x,
                     top: floatingPosition.y,
+                    zIndex: 999999,
                 }}
             >
                 {/* 浮动栏头部 */}
                 <div
-                    className="flex items-center justify-between p-3 border-b cursor-move bg-muted/50"
+                    className="flex items-center justify-between p-3 border-b cursor-move bg-gradient-to-r from-muted/50 to-muted/30 hover:from-muted/60 hover:to-muted/40 transition-all duration-200"
                     onMouseDown={handleMouseDown}
                 >
                     <div className="flex items-center gap-2">
-                        <GripVertical className="h-4 w-4 text-muted-foreground" />
+                        <GripVertical className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
                         <h3 className="font-semibold text-sm">模板管理</h3>
-                        <Badge variant="secondary" className="text-xs">
-                            {templates.length}
-                        </Badge>
                     </div>
                     <div className="flex items-center gap-1">
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => setIsMinimized(!isMinimized)}
+                            className="hover:bg-background/50"
                         >
                             {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
                         </Button>
@@ -350,15 +374,9 @@ export function TemplateManager({
                             variant="ghost"
                             size="sm"
                             onClick={() => setIsFloating(false)}
+                            className="hover:bg-background/50"
                         >
                             <PinOff className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={onClose}
-                        >
-                            <X className="h-4 w-4" />
                         </Button>
                     </div>
                 </div>
@@ -366,25 +384,25 @@ export function TemplateManager({
                 {!isMinimized && (
                     <div className="flex flex-col h-full">
                         {/* 搜索栏 */}
-                        <div className="p-3 border-b">
+                        <div className="p-3 border-b bg-muted/20">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="搜索模板..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10"
+                                    className="pl-10 bg-background/50 border-muted-foreground/20 focus:bg-background transition-colors"
                                 />
                             </div>
                         </div>
 
                         {/* 快速操作 */}
-                        <div className="p-3 border-b">
+                        <div className="p-3 border-b bg-muted/10">
                             <div className="flex gap-2">
                                 <Button
                                     size="sm"
                                     onClick={() => setShowUploadDialog(true)}
-                                    className="flex-1"
+                                    className="flex-1 hover:scale-105 transition-transform"
                                 >
                                     <Plus className="h-4 w-4 mr-1" />
                                     新建
@@ -393,27 +411,36 @@ export function TemplateManager({
                                     size="sm"
                                     variant="outline"
                                     onClick={() => setShowCategoryManager(true)}
+                                    className="hover:scale-105 transition-transform"
                                 >
                                     <FolderPlus className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setShowFontManager(true)}
+                                    className="hover:scale-105 transition-transform"
+                                >
+                                    <Type className="h-4 w-4" />
                                 </Button>
                             </div>
                         </div>
 
                         {/* 模板列表 */}
-                        <ScrollArea className="flex-1 p-3">
+                        <ScrollArea className="flex-1 p-3" style={{ maxHeight: 'calc(100% - 120px)' }}>
                             <div className="space-y-2">
-                                {filteredTemplates.slice(0, 10).map((template) => (
+                                {filteredTemplates.slice(0, 20).map((template) => (
                                     <div
                                         key={template.id}
-                                        className="flex items-center gap-2 p-2 rounded hover:bg-muted cursor-pointer"
+                                        className="flex items-center gap-2 p-2 rounded hover:bg-muted cursor-pointer transition-colors"
                                         onClick={() => handleApplyTemplate(template)}
                                     >
-                                        <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden">
+                                        <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden flex-shrink-0">
                                             {template.thumbnail_url ? (
                                                 <img
                                                     src={template.thumbnail_url}
                                                     alt={template.name}
-                                                    className="w-full h-full object-cover"
+                                                    className="w-full h-full object-contain"
                                                     onError={(e) => {
                                                         e.currentTarget.style.display = 'none'
                                                         e.currentTarget.nextElementSibling?.classList.remove('hidden')
@@ -436,13 +463,14 @@ export function TemplateManager({
                                                 {categories.find(c => c.id === template.category_id)?.name}
                                             </p>
                                         </div>
-                                        <div className="flex items-center gap-1">
+                                        <div className="flex items-center gap-1 flex-shrink-0">
                                             {template.is_favorite && (
                                                 <Star className="h-3 w-3 text-yellow-500 fill-current" />
                                             )}
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
+                                                className="h-6 w-6 p-0"
                                                 onClick={(e) => {
                                                     e.stopPropagation()
                                                     handleToggleFavorite(template.id)
@@ -453,6 +481,12 @@ export function TemplateManager({
                                         </div>
                                     </div>
                                 ))}
+                                {filteredTemplates.length === 0 && (
+                                    <div className="text-center py-8 text-muted-foreground">
+                                        <Layers className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                        <p className="text-sm">暂无模板</p>
+                                    </div>
+                                )}
                             </div>
                         </ScrollArea>
                     </div>
@@ -464,7 +498,7 @@ export function TemplateManager({
     // 全屏模式
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-7xl h-[90vh] p-0">
+            <DialogContent className="max-w-7xl h-[90vh] p-0 z-[9999]" style={{ zIndex: 9999 }}>
                 <DialogHeader className="p-6 pb-0">
                     <div className="flex items-center justify-between">
                         <div>
@@ -482,92 +516,91 @@ export function TemplateManager({
                                 <Pin className="h-4 w-4 mr-1" />
                                 浮动模式
                             </Button>
-                            <Button variant="outline" size="sm" onClick={onClose}>
-                                <X className="h-4 w-4" />
-                            </Button>
                         </div>
                     </div>
                 </DialogHeader>
 
                 <div className="flex flex-1 overflow-hidden">
                     {/* 左侧边栏 */}
-                    <div className="w-80 border-r bg-muted/20 p-4">
-                        <div className="space-y-4">
-                            {/* 搜索栏 */}
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="搜索模板..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10"
-                                />
-                            </div>
-
-                            {/* 分类筛选 */}
-                            <div>
-                                <Label className="text-sm font-medium mb-2 block">分类</Label>
-                                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">全部</SelectItem>
-                                        {categories.map(category => (
-                                            <SelectItem key={category.id} value={category.id}>
-                                                {category.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {/* 视图模式 */}
-                            <div>
-                                <Label className="text-sm font-medium mb-2 block">视图模式</Label>
-                                <div className="flex gap-2">
-                                    <Button
-                                        variant={viewMode === 'grid' ? 'default' : 'outline'}
-                                        size="sm"
-                                        onClick={() => setViewMode('grid')}
-                                    >
-                                        <Grid3X3 className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                        variant={viewMode === 'list' ? 'default' : 'outline'}
-                                        size="sm"
-                                        onClick={() => setViewMode('list')}
-                                    >
-                                        <List className="h-4 w-4" />
-                                    </Button>
+                    <div className="w-80 border-r bg-muted/20">
+                        <ScrollArea className="h-full p-4">
+                            <div className="space-y-4">
+                                {/* 搜索栏 */}
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="搜索模板..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="pl-10"
+                                    />
                                 </div>
-                            </div>
 
-                            {/* 统计信息 */}
-                            {stats && (
-                                <Card>
-                                    <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm">统计信息</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span>总模板</span>
-                                            <span className="font-medium">{stats.total_templates}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span>分类数</span>
-                                            <span className="font-medium">{stats.total_categories}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span>收藏数</span>
-                                            <span className="font-medium">
-                                                {templates.filter(t => t.is_favorite).length}
-                                            </span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
-                        </div>
+                                {/* 分类筛选 */}
+                                <div>
+                                    <Label className="text-sm font-medium mb-2 block">分类</Label>
+                                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">全部</SelectItem>
+                                            {categories.map(category => (
+                                                <SelectItem key={category.id} value={category.id}>
+                                                    {category.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* 视图模式 */}
+                                <div>
+                                    <Label className="text-sm font-medium mb-2 block">视图模式</Label>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            variant={viewMode === 'grid' ? 'default' : 'outline'}
+                                            size="sm"
+                                            onClick={() => setViewMode('grid')}
+                                        >
+                                            <Grid3X3 className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            variant={viewMode === 'list' ? 'default' : 'outline'}
+                                            size="sm"
+                                            onClick={() => setViewMode('list')}
+                                        >
+                                            <List className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* 统计信息 */}
+                                {stats && (
+                                    <Card>
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm">统计信息</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-2">
+                                            <div className="flex justify-between text-sm">
+                                                <span>总模板</span>
+                                                <span className="font-medium">{stats.total_templates}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span>分类数</span>
+                                                <span className="font-medium">{stats.total_categories}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span>收藏数</span>
+                                                <span className="font-medium">
+                                                    {templates.filter(t => t.is_favorite).length}
+                                                </span>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )}
+                            </div>
+                        </ScrollArea>
                     </div>
 
                     {/* 主内容区 */}
@@ -586,6 +619,13 @@ export function TemplateManager({
                                     >
                                         <FolderPlus className="h-4 w-4 mr-1" />
                                         管理分类
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setShowFontManager(true)}
+                                    >
+                                        <Type className="h-4 w-4 mr-1" />
+                                        字体管理
                                     </Button>
                                     <Button
                                         variant="outline"
@@ -644,7 +684,7 @@ export function TemplateManager({
                         )}
 
                         {/* 模板列表 */}
-                        <ScrollArea className="flex-1 p-4">
+                        <ScrollArea className="flex-1 p-4" style={{ maxHeight: 'calc(100vh - 200px)' }}>
                             {loading ? (
                                 <div className="flex items-center justify-center h-32">
                                     <RefreshCw className="h-6 w-6 animate-spin" />
@@ -661,7 +701,7 @@ export function TemplateManager({
                                             template={template}
                                             viewMode={viewMode}
                                             isSelected={selectedTemplates.has(template.id)}
-                                            onSelect={(selected) => {
+                                            onSelect={(selected: boolean) => {
                                                 setSelectedTemplates(prev => {
                                                     const newSet = new Set(prev)
                                                     if (selected) {
@@ -756,6 +796,16 @@ export function TemplateManager({
             <TemplateCategoryManager
                 categories={categories}
                 onCategoriesChange={setCategories}
+            />
+
+            <FontManager
+                isOpen={showFontManager}
+                onClose={() => setShowFontManager(false)}
+                onSuccess={() => {
+                    setShowFontManager(false)
+                    loadData()
+                    onSuccess?.()
+                }}
             />
         </Dialog>
     )

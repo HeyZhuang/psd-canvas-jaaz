@@ -13,9 +13,11 @@ import { cn } from '@/lib/utils'
 import { UserMenu } from './auth/UserMenu'
 
 export default function TopMenu({
+  left,
   middle,
   right,
 }: {
+  left?: React.ReactNode
   middle?: React.ReactNode
   right?: React.ReactNode
 }) {
@@ -32,6 +34,7 @@ export default function TopMenu({
       transition={{ duration: 0.3 }}
     >
       <div className="flex items-center gap-8">
+        {left}
         <motion.div
           className="flex items-center gap-2 cursor-pointer group"
           onClick={() => navigate({ to: '/' })}

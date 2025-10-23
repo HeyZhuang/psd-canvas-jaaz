@@ -114,6 +114,10 @@ function Canvas() {
           onNameSave={handleNameSave}
           psdData={psdData}
           onPSDUpdate={handlePSDUpdate}
+          onApplyTemplate={(template) => {
+            console.log('Applying template:', template)
+            // 这里可以添加应用模板的逻辑
+          }}
         />
         <ResizablePanelGroup
           direction='horizontal'

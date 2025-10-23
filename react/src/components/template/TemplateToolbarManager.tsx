@@ -101,7 +101,7 @@ export function TemplateToolbarManager({
     return (
         <>
             {/* 主工具栏按钮 */}
-            <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+            <div className="fixed top-4 right-4 z-[9999] flex items-center gap-2" style={{ zIndex: 9999 }}>
                 <Card className="shadow-lg">
                     <CardContent className="p-2">
                         <div className="flex items-center gap-2">

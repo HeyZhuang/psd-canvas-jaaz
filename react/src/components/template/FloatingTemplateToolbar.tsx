@@ -26,7 +26,7 @@ import {
     RefreshCw,
 } from 'lucide-react'
 import { TemplateItem, TemplateCategory } from '@/types/types'
-import { getTemplates, getTemplateCategories, applyTemplateToCanvas } from '@/api/template'
+import { getTemplates, getTemplateCategories } from '@/api/template'
 import { applyTemplateToExcalidraw } from '@/utils/templateCanvas'
 import { useCanvas } from '@/contexts/canvas'
 
@@ -77,12 +77,9 @@ export function FloatingTemplateToolbar({
         }
 
         try {
-            // 调用后端API应用模板
-            const result = await applyTemplateToCanvas(template.id, currentCanvasId)
-
-            // 在Excalidraw画布上显示模板
+            // 直接在Excalidraw画布上显示模板
             if (excalidrawAPI) {
-                applyTemplateToExcalidraw(excalidrawAPI, result)
+                await applyTemplateToExcalidraw(excalidrawAPI, template)
             }
 
             toast.success('模板已应用到画布')
@@ -135,18 +132,18 @@ export function FloatingTemplateToolbar({
 
     return (
         <div
-            className={`fixed z-50 transition-all duration-200 ${isExpanded ? 'w-80' : 'w-12'
+            className={`fixed z-[9999] transition-all duration-200 ${isExpanded ? 'w-80' : 'w-12'
                 }`}
             style={{
                 left: position.x,
                 top: position.y,
+                zIndex: 9999,
             }}
         >
             <Card className="shadow-lg border-2">
                 {/* 工具栏头部 */}
                 <div
-                    className="flex items-center justify-between p-2 cursor-move bg-muted/50"
-                    onMouseDown={handleMouseDown}
+                    className="flex items-center justify-between p-2 bg-muted/50"
                 >
                     <div className="flex items-center gap-2">
                         <GripVertical className="h-4 w-4 text-muted-foreground" />
