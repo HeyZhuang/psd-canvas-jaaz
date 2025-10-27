@@ -38,40 +38,78 @@ export function PSDResizeDialog({ psdData, isOpen, onClose }: PSDResizeDialogPro
         setError('')
 
         try {
-            // 從PSD URL獲取文件數據
-            const response = await fetch(psdData.url)
-            const blob = await response.blob()
-            const psdFile = new File([blob], `psd_${psdData.file_id}.psd`, { type: 'application/octet-stream' })
-
+            setProgress(10)
+            setCurrentStep('正在準備縮放請求...')
+            
+            // 使用新的服務端處理API，直接傳遞file_id，無需下載大文件
             const formData = new FormData()
-            formData.append('psd_file', psdFile)
+            formData.append('file_id', psdData.file_id)
             formData.append('target_width', targetWidth.toString())
             formData.append('target_height', targetHeight.toString())
             if (apiKey) {
                 formData.append('api_key', apiKey)
             }
 
-            setProgress(50)
-            setCurrentStep('正在調用Gemini API...')
+            setProgress(30)
+            setCurrentStep('正在調用Gemini API分析圖層（這可能需要1-2分鐘）...')
 
-            const resizeResponse = await fetch('/api/psd/resize/auto-resize', {
-                method: 'POST',
-                body: formData,
+            console.log('開始智能縮放:', {
+                file_id: psdData.file_id,
+                target_width: targetWidth,
+                target_height: targetHeight,
+                original_size: { width: psdData.width, height: psdData.height }
             })
 
-            if (!resizeResponse.ok) {
-                const errorData = await resizeResponse.json()
-                throw new Error(errorData.detail || '縮放失敗')
+            // 使用AbortController設置超時（180秒，因為Gemini API可能需要較長時間）
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 180000) // 180秒超時
+
+            try {
+                const resizeResponse = await fetch('/api/psd/resize/resize-by-id', {
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal,
+                })
+
+                clearTimeout(timeoutId)
+
+                if (!resizeResponse.ok) {
+                    let errorMessage = '縮放失敗'
+                    try {
+                        const errorData = await resizeResponse.json()
+                        errorMessage = errorData.detail || errorMessage
+                    } catch {
+                        errorMessage = `HTTP ${resizeResponse.status}: ${resizeResponse.statusText}`
+                    }
+                    throw new Error(errorMessage)
+                }
+
+                setProgress(90)
+                setCurrentStep('正在處理結果...')
+
+                const resultData = await resizeResponse.json()
+                
+                setProgress(100)
+                setCurrentStep('縮放完成')
+                setResult(resultData)
+                
+                console.log('縮放完成:', resultData)
+
+            } catch (fetchError: any) {
+                clearTimeout(timeoutId)
+                
+                if (fetchError.name === 'AbortError') {
+                    throw new Error('處理超時（超過3分鐘）。可能原因：\n1. Gemini API回應慢\n2. 圖層數量過多\n3. 網路連接問題\n\n請稍後重試或減少圖層數量。')
+                }
+                throw fetchError
             }
 
-            setProgress(100)
-            setCurrentStep('縮放完成')
-
-            const resultData = await resizeResponse.json()
-            setResult(resultData)
-
         } catch (err) {
-            setError(err instanceof Error ? err.message : '縮放失敗')
+            console.error('PSD縮放錯誤:', err)
+            
+            let errorMessage = err instanceof Error ? err.message : '縮放失敗'
+            
+            setError(errorMessage)
         } finally {
             setIsProcessing(false)
         }

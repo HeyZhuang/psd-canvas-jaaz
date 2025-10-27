@@ -18,7 +18,19 @@ router = APIRouter(prefix="/api/psd")
 
 # PSD文件存储目录
 PSD_DIR = os.path.join(FILES_DIR, "psd")
-os.makedirs(PSD_DIR, exist_ok=True)
+# 确保目录存在
+try:
+    os.makedirs(PSD_DIR, exist_ok=True)
+    print(f'✅ PSD目录初始化成功: {PSD_DIR}')
+except Exception as e:
+    print(f'⚠️ 创建PSD目录失败: {e}')
+    # 如果FILES_DIR不存在，先创建FILES_DIR
+    try:
+        os.makedirs(FILES_DIR, exist_ok=True)
+        os.makedirs(PSD_DIR, exist_ok=True)
+        print(f'✅ 重新创建PSD目录成功: {PSD_DIR}')
+    except Exception as e2:
+        print(f'❌ 无法创建PSD目录: {e2}')
 
 # 模板数据库配置
 TEMPLATE_DB_URL = "sqlite:///./user_data/templates.db"
@@ -242,10 +254,49 @@ async def upload_psd(file: UploadFile = File(...)):
 @router.get("/file/{file_id}")
 async def get_psd_file(file_id: str):
     """获取原始PSD文件"""
-    file_path = os.path.join(PSD_DIR, f'{file_id}.psd')
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="PSD file not found")
-    return FileResponse(file_path)
+    try:
+        # 首先检查PSD目录是否存在
+        if not os.path.exists(PSD_DIR):
+            print(f'⚠️ PSD目录不存在，正在创建: {PSD_DIR}')
+            os.makedirs(PSD_DIR, exist_ok=True)
+        
+        file_path = os.path.join(PSD_DIR, f'{file_id}.psd')
+        
+        # 详细的错误信息
+        if not os.path.exists(file_path):
+            print(f'❌ PSD文件未找到: {file_path}')
+            print(f'   当前PSD_DIR: {PSD_DIR}')
+            print(f'   PSD_DIR存在: {os.path.exists(PSD_DIR)}')
+            if os.path.exists(PSD_DIR):
+                files = os.listdir(PSD_DIR)
+                print(f'   PSD_DIR中的文件: {files[:10]}')
+            raise HTTPException(
+                status_code=404, 
+                detail=f"PSD file not found: {file_id}.psd. 请确保文件已成功上传。"
+            )
+        
+        print(f'✅ 找到PSD文件: {file_path}')
+        
+        # 使用StreamingResponse或者禁用Range请求以避免206状态码
+        # 添加headers确保返回完整文件
+        return FileResponse(
+            file_path,
+            media_type='application/octet-stream',
+            headers={
+                'Accept-Ranges': 'none',  # 禁用Range请求
+                'Content-Disposition': f'inline; filename="{file_id}.psd"'
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f'❌ 获取PSD文件失败: {e}')
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error retrieving PSD file: {str(e)}"
+        )
 
 
 @router.get("/composite/{file_id}")

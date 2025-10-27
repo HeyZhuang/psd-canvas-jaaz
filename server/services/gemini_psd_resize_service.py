@@ -10,7 +10,12 @@ import os
 import re
 from pathlib import Path
 from typing import Dict, List, Any, Optional
-from google import genai
+try:
+    from google import genai
+    from google.genai import types
+except ImportError:
+    import google.generativeai as genai
+    types = None
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,16 +35,29 @@ class GeminiPSDResizeService:
         if not self.api_key:
             raise ValueError("需要提供Gemini API密鑰，通過參數、GEMINI_API_KEY環境變量或config.env文件")
         
-        # 设置API密钥
+        # 设置API密钥和初始化客户端
         os.environ["GOOGLE_API_KEY"] = self.api_key
-        self.model = "gemini-2.5-pro"  # 使用Gemini 2.5 Pro模型
+        self.model_name = "gemini-2.5-pro"  # 使用Gemini 2.5 Pro模型
+        
+        # 初始化客户端
+        try:
+            # 尝试使用新版 google-genai SDK
+            self.client = genai.Client(api_key=self.api_key)
+            self.use_new_sdk = True
+            logger.info("使用 google-genai SDK (新版)")
+        except (AttributeError, TypeError):
+            # 回退到旧版 google-generativeai
+            genai.configure(api_key=self.api_key)
+            self.client = None
+            self.use_new_sdk = False
+            logger.info("使用 google-generativeai SDK (旧版)")
     
     def _load_api_key_from_config(self) -> Optional[str]:
         """從配置文件加載API密鑰"""
         try:
             # 首先嘗試從環境變量讀取
             api_key = os.environ.get("GEMINI_API_KEY")
-            if api_key and api_key != "AIzaSyBZKqCqcyCrqmbx6RFJFQe-E8spoKD7xK4":
+            if api_key and api_key != "****************":
                 return api_key
             
             # 嘗試從config.env文件讀取
@@ -51,7 +69,7 @@ class GeminiPSDResizeService:
                         line = line.strip()
                         if line.startswith('GEMINI_API_KEY=') and not line.startswith('#'):
                             api_key = line.split('=', 1)[1].strip()
-                            if api_key and api_key != "AIzaSyBZKqCqcyCrqmbx6RFJFQe-E8spoKD7xK4":
+                            if api_key and api_key != "****************":
                                 return api_key
             
             return None
@@ -243,27 +261,49 @@ class GeminiPSDResizeService:
         """
         try:
             import base64
+            from PIL import Image
+            from io import BytesIO
             
-            # 創建模型實例
-            model = genai.GenerativeModel(self.model)
-            
-            # 準備內容
+            # 準備圖像數據
             image_data = base64.b64decode(image_base64)
+            image = Image.open(BytesIO(image_data))
             
-            # 生成內容
-            response = model.generate_content(
-                [prompt, {"mime_type": "image/png", "data": image_data}],
-                generation_config={
-                    "temperature": temperature,
-                    "max_output_tokens": max_tokens,
-                }
-            )
-            
-            logger.info("Gemini API調用完成")
-            return response.text
+            if self.use_new_sdk and self.client:
+                # 使用新版 google-genai SDK
+                logger.info("使用新版SDK調用Gemini API")
+                
+                response = self.client.models.generate_content(
+                    model=self.model_name,
+                    contents=[prompt, image],
+                    config=types.GenerateContentConfig(
+                        temperature=temperature,
+                        max_output_tokens=max_tokens,
+                        response_modalities=["Text"]
+                    )
+                )
+                
+                # 提取响应文本
+                return response.candidates[0].content.parts[0].text
+            else:
+                # 使用旧版 google-generativeai SDK
+                logger.info("使用旧版SDK調用Gemini API")
+                
+                model = genai.GenerativeModel(self.model_name)
+                
+                # 生成內容
+                response = model.generate_content(
+                    [prompt, image],
+                    generation_config={
+                        "temperature": temperature,
+                        "max_output_tokens": max_tokens,
+                    }
+                )
+                
+                return response.text
             
         except Exception as e:
             logger.error(f"Gemini API調用失敗: {e}")
+            logger.error(f"错误详情: {type(e).__name__}: {str(e)}")
             raise
     
     def parse_gemini_response(self, response_text: str) -> List[Dict[str, Any]]:

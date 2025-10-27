@@ -247,7 +247,7 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
     }
   }
 
-  // Resize功能相关函数
+  // Resize功能相关函数 - 使用服务端直接处理（无需下载大文件）
   const handleResize = async () => {
     if (!psdData) {
       setError('没有可用的PSD数据')
@@ -260,39 +260,78 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
     setError('')
 
     try {
-      const response = await fetch(psdData.url)
-      const blob = await response.blob()
-      const psdFile = new File([blob], `psd_${psdData.file_id}.psd`, { type: 'application/octet-stream' })
-
+      setProgress(10)
+      setCurrentStep('正在准备缩放请求...')
+      
+      // 使用新的服务端处理API，直接传递file_id，无需下载大文件
       const formData = new FormData()
-      formData.append('psd_file', psdFile)
+      formData.append('file_id', psdData.file_id)
       formData.append('target_width', targetWidth.toString())
       formData.append('target_height', targetHeight.toString())
       if (apiKey) {
         formData.append('api_key', apiKey)
       }
 
-      setProgress(50)
-      setCurrentStep('正在调用Gemini API...')
+      setProgress(30)
+      setCurrentStep('正在调用Gemini API分析图层（这可能需要1-2分钟）...')
 
-      const resizeResponse = await fetch('/api/psd/resize/auto-resize', {
-        method: 'POST',
-        body: formData,
+      console.log('开始智能缩放:', {
+        file_id: psdData.file_id,
+        target_width: targetWidth,
+        target_height: targetHeight,
+        original_size: { width: psdData.width, height: psdData.height }
       })
 
-      if (!resizeResponse.ok) {
-        const errorData = await resizeResponse.json()
-        throw new Error(errorData.detail || '缩放失败')
+      // 使用AbortController设置超时（180秒，因为Gemini API可能需要较长时间）
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 180000) // 180秒超时
+
+      try {
+        const resizeResponse = await fetch('/api/psd/resize/resize-by-id', {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal,
+        })
+
+        clearTimeout(timeoutId)
+
+        if (!resizeResponse.ok) {
+          let errorMessage = '缩放失败'
+          try {
+            const errorData = await resizeResponse.json()
+            errorMessage = errorData.detail || errorMessage
+          } catch {
+            errorMessage = `HTTP ${resizeResponse.status}: ${resizeResponse.statusText}`
+          }
+          throw new Error(errorMessage)
+        }
+
+        setProgress(90)
+        setCurrentStep('正在处理结果...')
+
+        const resultData = await resizeResponse.json()
+        
+        setProgress(100)
+        setCurrentStep('缩放完成')
+        setResult(resultData)
+        
+        console.log('缩放完成:', resultData)
+
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId)
+        
+        if (fetchError.name === 'AbortError') {
+          throw new Error('处理超时（超过3分钟）。可能原因：\n1. Gemini API响应慢\n2. 图层数量过多\n3. 网络连接问题\n\n请稍后重试或减少图层数量。')
+        }
+        throw fetchError
       }
 
-      setProgress(100)
-      setCurrentStep('缩放完成')
-
-      const resultData = await resizeResponse.json()
-      setResult(resultData)
-
     } catch (err) {
-      setError(err instanceof Error ? err.message : '缩放失败')
+      console.error('PSD缩放错误:', err)
+      
+      let errorMessage = err instanceof Error ? err.message : '缩放失败'
+      
+      setError(errorMessage)
     } finally {
       setIsProcessing(false)
     }
@@ -819,3 +858,5 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
 }
 
 export default CanvasToolMenu
+
+

@@ -25,7 +25,7 @@ def setup_api_key():
         except Exception as e:
             print(f"⚠️ 读取配置文件失败: {e}")
     
-    if existing_key and existing_key != "AIzaSyBZKqCqcyCrqmbx6RFJFQe-E8spoKD7xK4":
+    if existing_key and existing_key != "****************":
         print(f"✅ 检测到现有API密钥: {existing_key[:10]}...")
         choice = input("是否要更新API密钥? (y/N): ").strip().lower()
         if choice != 'y':
@@ -46,7 +46,7 @@ def setup_api_key():
         print("❌ 未输入API密钥")
         return False
     
-    if api_key == "AIzaSyBZKqCqcyCrqmbx6RFJFQe-E8spoKD7xK4":
+    if api_key == "****************":
         print("❌ 请使用实际的API密钥，而不是占位符")
         return False
     
