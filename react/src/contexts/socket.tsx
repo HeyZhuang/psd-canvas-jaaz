@@ -24,7 +24,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const { t } = useTranslation()
   const [connected, setConnected] = useState(false)
   const [socketId, setSocketId] = useState<string>()
-  const [connecting, setConnecting] = useState(true)
+  const [connecting, setConnecting] = useState(false)  // 改為 false，Socket.IO 是可選的
   const [error, setError] = useState<string>()
 
   // Use useRef to maintain socket manager instance across re-renders
@@ -49,58 +49,71 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         }
 
         const socketManager = socketManagerRef.current
-        await socketManager.connect()
+        
+        // 嘗試連接，但不阻塞應用運行
+        try {
+          await socketManager.connect()
+          
+          if (mounted) {
+            setConnected(true)
+            setSocketId(socketManager.getSocketId())
+            setConnecting(false)
+            console.log('🚀 Socket.IO initialized successfully')
 
-        if (mounted) {
-          setConnected(true)
-          setSocketId(socketManager.getSocketId())
-          setConnecting(false)
-          console.log('🚀 Socket.IO initialized successfully')
+            const socket = socketManager.getSocket()
+            if (socket) {
+              const handleConnect = () => {
+                if (mounted) {
+                  setConnected(true)
+                  setSocketId(socketManager.getSocketId())
+                  setConnecting(false)
+                  setError(undefined)
+                }
+              }
 
-          const socket = socketManager.getSocket()
-          if (socket) {
-            const handleConnect = () => {
-              if (mounted) {
-                setConnected(true)
-                setSocketId(socketManager.getSocketId())
-                setConnecting(false)
-                setError(undefined)
+              const handleDisconnect = () => {
+                if (mounted) {
+                  setConnected(false)
+                  setSocketId(undefined)
+                  setConnecting(false)
+                }
+              }
+
+              const handleConnectError = (error: Error) => {
+                if (mounted) {
+                  // Socket.IO 連接失敗不應該阻塞應用
+                  console.warn('⚠️ Socket.IO connection error (non-critical):', error.message)
+                  setConnected(false)
+                  setConnecting(false)
+                }
+              }
+
+              socket.on('connect', handleConnect)
+              socket.on('disconnect', handleDisconnect)
+              socket.on('connect_error', handleConnectError)
+
+              return () => {
+                socket.off('connect', handleConnect)
+                socket.off('disconnect', handleDisconnect)
+                socket.off('connect_error', handleConnectError)
               }
             }
-
-            const handleDisconnect = () => {
-              if (mounted) {
-                setConnected(false)
-                setSocketId(undefined)
-                setConnecting(false)
-              }
-            }
-
-            const handleConnectError = (error: Error) => {
-              if (mounted) {
-                setError(error.message || '❌ Socket.IO Connection Error')
-                setConnected(false)
-                setConnecting(false)
-              }
-            }
-
-            socket.on('connect', handleConnect)
-            socket.on('disconnect', handleDisconnect)
-            socket.on('connect_error', handleConnectError)
-
-            return () => {
-              socket.off('connect', handleConnect)
-              socket.off('disconnect', handleDisconnect)
-              socket.off('connect_error', handleConnectError)
-            }
+          }
+        } catch (connectError) {
+          // Socket.IO 連接失敗，但應用仍可繼續運行
+          console.warn('⚠️ Socket.IO unavailable (app will continue without real-time features):', connectError)
+          if (mounted) {
+            setConnected(false)
+            setConnecting(false)
+            // 不設置 error，因為這不是致命錯誤
           }
         }
       } catch (err) {
         if (mounted) {
-          setError(err instanceof Error ? err.message : 'Unknown error')
+          // 只記錄警告，不顯示錯誤給用戶
+          console.warn('⚠️ Socket.IO initialization failed (non-critical):', err)
           setConnected(false)
           setConnecting(false)
-          console.error('❌ Failed to initialize Socket.IO:', err)
         }
       }
     }
@@ -133,17 +146,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     <SocketContext.Provider value={value}>
       {children}
 
-      {error && (
-        <div className="fixed top-4 right-4 z-50 bg-red-500 text-white px-3 py-2 rounded-md shadow-lg">
-          {socketManagerRef.current?.isMaxReconnectAttemptsReached()
-            ? t('socket.maxRetriesReached')
-            : t('socket.connectionError', {
-              current: socketManagerRef.current?.getReconnectAttempts() || 0,
-              max: 5,
-              error
-            })}
-        </div>
-      )}
+      {/* Socket.IO 錯誤不再顯示，因為它是可選功能 */}
+      {/* 如果需要實時功能，請確保後端 Socket.IO 服務器正在運行 */}
     </SocketContext.Provider>
   )
 }

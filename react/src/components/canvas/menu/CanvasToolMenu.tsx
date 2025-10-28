@@ -247,6 +247,114 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
     }
   }
 
+  // 添加缩放后的图片到画布
+  const addResizedImageToCanvas = async (imageUrl: string, width: number, height: number) => {
+    if (!excalidrawAPI) {
+      console.error('excalidrawAPI 不可用')
+      toast.error('画布API不可用')
+      return
+    }
+
+    try {
+      console.log('正在添加缩放后的图片到画布:', imageUrl)
+
+      // 获取图片
+      const response = await fetch(imageUrl)
+      if (!response.ok) {
+        throw new Error(`获取图片失败: ${response.status}`)
+      }
+
+      const blob = await response.blob()
+      const file = new File([blob], `resized_${Date.now()}.png`, { type: 'image/png' })
+
+      // 转换为 Base64
+      const dataURL = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+
+      // 生成唯一的文件ID
+      const fileId = `resized-image-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+      // 创建 Excalidraw 文件数据
+      const fileData = {
+        mimeType: 'image/png' as const,
+        id: fileId as any,
+        dataURL: dataURL as any,
+        created: Date.now()
+      }
+
+      // 添加到 Excalidraw 文件系统
+      excalidrawAPI.addFiles([fileData])
+      console.log('文件已添加到 Excalidraw:', fileId)
+
+      // 等待文件完全加载
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // 获取当前画布元素
+      const currentElements = excalidrawAPI.getSceneElements()
+
+      // 计算画布中心位置
+      const appState = excalidrawAPI.getAppState()
+      const canvasWidth = appState.width || 800
+      const canvasHeight = appState.height || 600
+      const centerX = (canvasWidth - width) / 2
+      const centerY = (canvasHeight - height) / 2
+
+      // 创建图片元素
+      const imageElement = {
+        type: 'image' as const,
+        id: `resized-${Date.now()}`,
+        x: centerX > 0 ? centerX : 100,
+        y: centerY > 0 ? centerY : 100,
+        width: width,
+        height: height,
+        angle: 0,
+        strokeColor: '#000000',
+        backgroundColor: 'transparent',
+        fillStyle: 'solid' as const,
+        strokeWidth: 0,
+        strokeStyle: 'solid' as const,
+        roughness: 1,
+        opacity: 100,
+        groupIds: [],
+        frameId: null,
+        roundness: null,
+        seed: Math.floor(Math.random() * 1000000),
+        version: 1,
+        versionNonce: Math.floor(Math.random() * 1000000),
+        isDeleted: false,
+        boundElements: null,
+        updated: Date.now(),
+        link: null,
+        locked: false,
+        fileId: fileId as any,
+        scale: [1, 1] as [number, number],
+        status: 'saved' as const,
+        index: null,
+        crop: null,
+        customData: {
+          isResizedPSD: true,
+          originalPSDFileId: psdData?.file_id,
+          resizedAt: Date.now()
+        }
+      } as any
+
+      // 更新场景，添加新图片元素
+      excalidrawAPI.updateScene({
+        elements: [...currentElements, imageElement],
+      })
+
+      console.log('缩放后的图片已添加到画布')
+
+    } catch (error) {
+      console.error('添加图片到画布失败:', error)
+      toast.error('添加图片到画布失败: ' + (error instanceof Error ? error.message : '未知错误'))
+    }
+  }
+
   // Resize功能相关函数 - 使用服务端直接处理（无需下载大文件）
   const handleResize = async () => {
     if (!psdData) {
@@ -258,6 +366,7 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
     setProgress(0)
     setCurrentStep('正在处理PSD文件...')
     setError('')
+    setResult(null)
 
     try {
       setProgress(10)
@@ -282,11 +391,15 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
         original_size: { width: psdData.width, height: psdData.height }
       })
 
-      // 使用AbortController设置超时（180秒，因为Gemini API可能需要较长时间）
+      // 增加超时时间到5分钟（300秒），并添加更好的错误处理
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 180000) // 180秒超时
+      const timeoutId = setTimeout(() => {
+        controller.abort()
+        console.warn('请求超时，已取消')
+      }, 300000) // 300秒超时
 
       try {
+        // 检查API端点是否可访问
         const resizeResponse = await fetch('/api/psd/resize/resize-by-id', {
           method: 'POST',
           body: formData,
@@ -299,7 +412,12 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
           let errorMessage = '缩放失败'
           try {
             const errorData = await resizeResponse.json()
-            errorMessage = errorData.detail || errorMessage
+            errorMessage = errorData.detail || errorData.error || errorMessage
+
+            // 检查是否是后端服务器未运行
+            if (resizeResponse.status === 502 || resizeResponse.status === 503) {
+              errorMessage = '后端服务器未运行或无法访问。请确保后端服务器已启动。'
+            }
           } catch {
             errorMessage = `HTTP ${resizeResponse.status}: ${resizeResponse.statusText}`
           }
@@ -311,18 +429,37 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
 
         const resultData = await resizeResponse.json()
 
+        setProgress(95)
+        setCurrentStep('正在添加图片到画布...')
+
+        // 自动添加缩放后的图片到画布
+        if (resultData.output_url && excalidrawAPI) {
+          await addResizedImageToCanvas(
+            resultData.output_url,
+            resultData.target_size.width,
+            resultData.target_size.height
+          )
+        }
+
         setProgress(100)
         setCurrentStep('缩放完成')
         setResult(resultData)
 
         console.log('缩放完成:', resultData)
+        toast.success('智能缩放完成！图片已添加到画布')
 
       } catch (fetchError: any) {
         clearTimeout(timeoutId)
 
         if (fetchError.name === 'AbortError') {
-          throw new Error('处理超时（超过3分钟）。可能原因：\n1. Gemini API响应慢\n2. 图层数量过多\n3. 网络连接问题\n\n请稍后重试或减少图层数量。')
+          throw new Error('处理超时（超过5分钟）。可能原因：\n1. Gemini API响应慢\n2. 图层数量过多\n3. 网络连接问题\n4. 后端服务器未运行\n\n请稍后重试或减少图层数量。')
         }
+
+        // 处理网络错误
+        if (fetchError.message === 'Failed to fetch') {
+          throw new Error('无法连接到后端服务器。请确保：\n1. 后端服务器已启动\n2. API路径正确\n3. 网络连接正常')
+        }
+
         throw fetchError
       }
 
@@ -348,6 +485,7 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
       }
 
       setError(errorMessage)
+      toast.error('智能缩放失败')
     } finally {
       setIsProcessing(false)
     }

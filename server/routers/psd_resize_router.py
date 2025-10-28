@@ -23,8 +23,8 @@ router = APIRouter(prefix="/api/psd/resize", tags=["PSD Resize"])
 
 # 配置
 from services.config_service import FILES_DIR
+from common import DEFAULT_PORT
 PSD_DIR = os.path.join(FILES_DIR, "psd")
-DEFAULT_PORT = 8000
 
 
 @router.post("/auto-resize")

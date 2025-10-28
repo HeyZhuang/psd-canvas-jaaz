@@ -46,7 +46,7 @@ def setup_api_key():
         print("❌ 未输入API密钥")
         return False
     
-    if api_key == "AIzaSyAhQ_OdmZmLf2yK_E7NT-GTEyqih94Z6zk":
+    if api_key == "AIzaSyBi***************":
         print("❌ 请使用实际的API密钥，而不是占位符")
         return False
     

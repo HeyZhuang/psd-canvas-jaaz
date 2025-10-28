@@ -11,8 +11,9 @@ export class SocketIOManager {
   private socket: Socket | null = null
   private connected = false
   private reconnectAttempts = 0
-  private maxReconnectAttempts = 5
-  private reconnectDelay = 1000
+  private maxReconnectAttempts = 3  // 減少重連次數
+  private reconnectDelay = 2000  // 增加重連延遲
+  private connectionTimeout = 10000  // 10秒連接超時
 
   constructor(private config: SocketConfig = {}) {
     if (config.autoConnect !== false) {
@@ -28,15 +29,26 @@ export class SocketIOManager {
         this.socket.disconnect()
       }
 
+      // Socket.IO 連接配置 - 更保守的重連策略
       this.socket = io(url, {
         transports: ['websocket'],
         upgrade: false,
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: this.reconnectDelay,
+        timeout: this.connectionTimeout,
       })
 
+      // 設置連接超時
+      const connectTimeout = setTimeout(() => {
+        if (!this.connected) {
+          console.warn('⚠️ Socket.IO connection timeout (this is optional, app will continue)')
+          reject(new Error('Connection timeout'))
+        }
+      }, this.connectionTimeout)
+
       this.socket.on('connect', () => {
+        clearTimeout(connectTimeout)
         console.log('✅ Socket.IO connected:', this.socket?.id)
         this.connected = true
         this.reconnectAttempts = 0
@@ -44,14 +56,20 @@ export class SocketIOManager {
       })
 
       this.socket.on('connect_error', (error) => {
-        console.error('❌ Socket.IO connection error:', error)
         this.connected = false
         this.reconnectAttempts++
 
+        // 只在第一次失敗時記錄警告，避免控制台刷屏
+        if (this.reconnectAttempts === 1) {
+          console.warn('⚠️ Socket.IO connection error (app will continue without real-time features):', error.message)
+        }
+
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+          clearTimeout(connectTimeout)
+          // 不再顯示錯誤，因為 Socket.IO 是可選的
           reject(
             new Error(
-              `Failed to connect after ${this.maxReconnectAttempts} attempts`
+              `Socket.IO unavailable after ${this.maxReconnectAttempts} attempts`
             )
           )
         }

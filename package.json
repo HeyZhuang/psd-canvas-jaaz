@@ -83,7 +83,7 @@
     "@electron/notarize": "^3.0.1",
     "@types/electron": "^1.4.38",
     "@types/node": "^20.19.4",
-    "concurrently": "^9.1.2",
+    "concurrently": "^9.2.1",
     "cross-env": "^7.0.3",
     "electron": "^35.1.0",
     "electron-builder": "^24.0.0",
