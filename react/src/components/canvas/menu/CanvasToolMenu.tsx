@@ -262,7 +262,7 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
     try {
       setProgress(10)
       setCurrentStep('正在准备缩放请求...')
-      
+
       // 使用新的服务端处理API，直接传递file_id，无需下载大文件
       const formData = new FormData()
       formData.append('file_id', psdData.file_id)
@@ -310,16 +310,16 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
         setCurrentStep('正在处理结果...')
 
         const resultData = await resizeResponse.json()
-        
+
         setProgress(100)
         setCurrentStep('缩放完成')
         setResult(resultData)
-        
+
         console.log('缩放完成:', resultData)
 
       } catch (fetchError: any) {
         clearTimeout(timeoutId)
-        
+
         if (fetchError.name === 'AbortError') {
           throw new Error('处理超时（超过3分钟）。可能原因：\n1. Gemini API响应慢\n2. 图层数量过多\n3. 网络连接问题\n\n请稍后重试或减少图层数量。')
         }
@@ -328,9 +328,25 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
 
     } catch (err) {
       console.error('PSD缩放错误:', err)
-      
+
       let errorMessage = err instanceof Error ? err.message : '缩放失败'
-      
+
+      // 检查是否是配额错误
+      if (errorMessage.includes('429') ||
+        errorMessage.includes('RESOURCE_EXHAUSTED') ||
+        errorMessage.includes('quota') ||
+        errorMessage.includes('配额')) {
+        errorMessage = `🚫 Gemini API 配额已用尽\n\n` +
+          `免费配额限制：\n` +
+          `• 每分钟：15 次请求\n` +
+          `• 每天：1,500 次请求\n\n` +
+          `解决方案：\n` +
+          `1. ⏰ 等待几分钟后重试\n` +
+          `2. 📊 访问配额管理页面查看使用情况\n` +
+          `3. 💳 考虑升级到付费计划\n\n` +
+          `📎 配额管理：https://ai.dev/usage?tab=rate-limit`
+      }
+
       setError(errorMessage)
     } finally {
       setIsProcessing(false)

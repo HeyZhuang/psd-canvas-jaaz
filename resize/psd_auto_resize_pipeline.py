@@ -35,7 +35,7 @@ class PSDAutoResizePipeline:
         self.target_width = target_width
         self.target_height = target_height
         # self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
-        self.api_key = "****************"
+        self.api_key = "AIzaSyAhQ_OdmZmLf2yK_E7NT-GTEyqih94Z6zk"
 
         if not self.api_key:
             raise ValueError("需要提供Gemini API密钥，通过参数或GEMINI_API_KEY环境变量")

@@ -189,7 +189,7 @@ const createWindow = (pyPort) => {
 
   // In development, use Vite dev server
   if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadURL('http://localhost:3000', {
+    mainWindow.loadURL('http://localhost:3004', {
       extraHeaders: 'pragma: no-cache\n',
     })
     mainWindow.webContents.openDevTools()
@@ -238,7 +238,7 @@ const startPythonApi = async () => {
 
   // Set BASE_API_URL based on environment
   env.BASE_API_URL =
-    process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://jaaz.app'
+    process.env.NODE_ENV === 'development' ? 'http://localhost:3004' : 'https://jaaz.app'
   console.log('BASE_API_URL:', env.BASE_API_URL)
 
   // Apply proxy settings and get environment variables

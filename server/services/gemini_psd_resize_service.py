@@ -57,20 +57,26 @@ class GeminiPSDResizeService:
         try:
             # 首先嘗試從環境變量讀取
             api_key = os.environ.get("GEMINI_API_KEY")
-            if api_key and api_key != "****************":
+            if api_key and api_key not in ["", "YOUR_GEMINI_API_KEY", "your_api_key_here"]:
+                logger.info(f"从环境变量加载 API key: {api_key[:10]}...")
                 return api_key
             
             # 嘗試從config.env文件讀取
             # 从server目录向上两级到项目根目录
             config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "config.env")
             if os.path.exists(config_path):
+                logger.info(f"找到配置文件: {config_path}")
                 with open(config_path, 'r', encoding='utf-8') as f:
                     for line in f:
                         line = line.strip()
                         if line.startswith('GEMINI_API_KEY=') and not line.startswith('#'):
                             api_key = line.split('=', 1)[1].strip()
-                            if api_key and api_key != "****************":
+                            # 排除常见的占位符，但接受实际的 API key
+                            if api_key and api_key not in ["", "YOUR_GEMINI_API_KEY", "your_api_key_here"]:
+                                logger.info(f"从配置文件加载 API key: {api_key[:10]}...")
                                 return api_key
+            else:
+                logger.warning(f"配置文件不存在: {config_path}")
             
             return None
         except Exception as e:
@@ -246,65 +252,103 @@ class GeminiPSDResizeService:
                             prompt: str, 
                             image_base64: str,
                             temperature: float = 0.1,
-                            max_tokens: int = 32000) -> str:
+                            max_tokens: int = 32000,
+                            max_retries: int = 3) -> str:
         """
-        調用Gemini API
+        調用Gemini API（带重试机制）
         
         Args:
             prompt: 提示詞
             image_base64: 圖像的base64編碼
             temperature: 溫度參數
             max_tokens: 最大輸出token數
+            max_retries: 最大重试次数（针对配额错误）
             
         Returns:
             API響應文本
         """
-        try:
-            import base64
-            from PIL import Image
-            from io import BytesIO
-            
-            # 準備圖像數據
-            image_data = base64.b64decode(image_base64)
-            image = Image.open(BytesIO(image_data))
-            
-            if self.use_new_sdk and self.client:
-                # 使用新版 google-genai SDK
-                logger.info("使用新版SDK調用Gemini API")
+        import time
+        import asyncio
+        
+        for attempt in range(max_retries):
+            try:
+                import base64
+                from PIL import Image
+                from io import BytesIO
                 
-                response = self.client.models.generate_content(
-                    model=self.model_name,
-                    contents=[prompt, image],
-                    config=types.GenerateContentConfig(
-                        temperature=temperature,
-                        max_output_tokens=max_tokens,
-                        response_modalities=["Text"]
+                # 準備圖像數據
+                image_data = base64.b64decode(image_base64)
+                image = Image.open(BytesIO(image_data))
+                
+                if self.use_new_sdk and self.client:
+                    # 使用新版 google-genai SDK
+                    logger.info("使用新版SDK調用Gemini API")
+                    
+                    response = self.client.models.generate_content(
+                        model=self.model_name,
+                        contents=[prompt, image],
+                        config=types.GenerateContentConfig(
+                            temperature=temperature,
+                            max_output_tokens=max_tokens,
+                            response_modalities=["Text"]
+                        )
                     )
+                    
+                    # 提取响应文本
+                    return response.candidates[0].content.parts[0].text
+                else:
+                    # 使用旧版 google-generativeai SDK
+                    logger.info("使用旧版SDK調用Gemini API")
+                    
+                    model = genai.GenerativeModel(self.model_name)
+                    
+                    # 生成內容
+                    response = model.generate_content(
+                        [prompt, image],
+                        generation_config={
+                            "temperature": temperature,
+                            "max_output_tokens": max_tokens,
+                        }
+                    )
+                    
+                    return response.text
+                
+            except Exception as e:
+                error_str = str(e)
+                error_type = type(e).__name__
+                
+                # 检查是否是配额错误
+                is_quota_error = (
+                    '429' in error_str or 
+                    'RESOURCE_EXHAUSTED' in error_str or
+                    'quota' in error_str.lower() or
+                    'rate limit' in error_str.lower()
                 )
                 
-                # 提取响应文本
-                return response.candidates[0].content.parts[0].text
-            else:
-                # 使用旧版 google-generativeai SDK
-                logger.info("使用旧版SDK調用Gemini API")
+                if is_quota_error and attempt < max_retries - 1:
+                    # 指数退避重试
+                    wait_time = (2 ** attempt) * 5  # 5秒, 10秒, 20秒...
+                    logger.warning(f"配额限制错误，{wait_time}秒后进行第{attempt + 2}次重试...")
+                    await asyncio.sleep(wait_time)
+                    continue
                 
-                model = genai.GenerativeModel(self.model_name)
+                # 记录详细错误信息
+                logger.error(f"Gemini API調用失敗: {e}")
+                logger.error(f"错误详情: {error_type}: {error_str}")
                 
-                # 生成內容
-                response = model.generate_content(
-                    [prompt, image],
-                    generation_config={
-                        "temperature": temperature,
-                        "max_output_tokens": max_tokens,
-                    }
-                )
+                # 提供更友好的错误消息
+                if is_quota_error:
+                    raise Exception(
+                        f"Gemini API 配额已用尽。\n"
+                        f"免费配额限制：每分钟 15 次，每天 1,500 次。\n"
+                        f"解决方案：\n"
+                        f"1. 等待一段时间后重试\n"
+                        f"2. 访问 https://ai.dev/usage?tab=rate-limit 查看配额使用情况\n"
+                        f"3. 考虑升级到付费计划以获得更高配额\n"
+                        f"原始错误: {error_str}"
+                    )
                 
-                return response.text
-            
-        except Exception as e:
-            logger.error(f"Gemini API調用失敗: {e}")
-            logger.error(f"错误详情: {type(e).__name__}: {str(e)}")
-            raise
+                raise
     
     def parse_gemini_response(self, response_text: str) -> List[Dict[str, Any]]:
         """
