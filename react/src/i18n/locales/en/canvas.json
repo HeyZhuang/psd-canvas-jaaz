@@ -40,10 +40,7 @@
     "shape": "Shape",
     "arrow": "Arrow",
     "line": "Line",
-    "zoomFit": "Zoom to fit",
-    "freedraw": "Free Draw",
-    "plus": "Upload",
-    "frame": "Frame"
+    "zoomFit": "Zoom to fit"
   },
   "popbar": {
     "addToChat": "Add to chat",
