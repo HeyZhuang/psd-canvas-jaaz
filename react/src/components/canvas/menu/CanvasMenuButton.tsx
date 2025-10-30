@@ -14,6 +14,7 @@ type CanvasMenuButtonProps = {
   active?: boolean
   activeTool?: ToolType
   onClick?: () => void
+  className?: string
 }
 
 const CanvasMenuButton = ({
@@ -21,6 +22,7 @@ const CanvasMenuButton = ({
   active,
   activeTool,
   onClick,
+  className,
 }: CanvasMenuButtonProps) => {
   const { t } = useTranslation()
   const isActive = activeTool === type || active
@@ -33,7 +35,8 @@ const CanvasMenuButton = ({
           size="icon"
           className={cn(
             'p-2 rounded-md cursor-pointer hover:bg-primary/5',
-            isActive && 'bg-primary/10'
+            isActive && 'bg-primary/10',
+            className
           )}
           onMouseDown={(e) => {
             e.preventDefault()

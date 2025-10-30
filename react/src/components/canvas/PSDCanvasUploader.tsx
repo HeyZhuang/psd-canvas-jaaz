@@ -14,9 +14,10 @@ import type { TemplateCategory } from '@/types/types'
 interface PSDCanvasUploaderProps {
     canvasId: string
     onPSDUploaded?: (psdData: PSDUploadResponse) => void
+    className?: string
 }
 
-export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploaderProps) {
+export function PSDCanvasUploader({ canvasId, onPSDUploaded, className }: PSDCanvasUploaderProps) {
     const { t } = useTranslation()
     const { excalidrawAPI } = useCanvas()
     const [uploading, setUploading] = useState(false)
@@ -666,7 +667,7 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
                 <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-8 p-0"
+                    className={`h-8 w-8 p-0 ${className || ''}`}
                     title="上傳 PSD 檔案"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}

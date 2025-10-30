@@ -29,7 +29,7 @@ function Canvas() {
 
   // PSD图层侧边栏状态
   const [psdData, setPsdData] = useState<PSDUploadResponse | null>(null)
-  const [isLayerSidebarVisible, setIsLayerSidebarVisible] = useState(false)
+  const [isLayerSidebarVisible, setIsLayerSidebarVisible] = useState(true) // 默认显示侧边栏
   const search = useSearch({ from: '/canvas/$id' }) as {
     sessionId: string
   }
@@ -80,10 +80,6 @@ function Canvas() {
   // PSD数据更新处理
   const handlePSDUpdate = (updatedPsdData: PSDUploadResponse) => {
     setPsdData(updatedPsdData)
-    // 当有PSD数据时，自动显示图层侧边栏
-    if (updatedPsdData) {
-      setIsLayerSidebarVisible(true)
-    }
   }
 
   // 如果有错误，显示错误信息
@@ -124,7 +120,8 @@ function Canvas() {
           className='w-screen h-screen'
           autoSaveId='jaaz-chat-panel'
         >
-          <ResizablePanel className='relative' defaultSize={80}>
+          {/* 移除ResizableHandle，因为右侧面板不再是可调整大小的 */}
+          <ResizablePanel className='relative' defaultSize={100}>
             <div className='w-full h-full'>
               {isLoading ? (
                 <div className='flex-1 flex-grow px-4 bg-accent w-[24%] absolute right-0'>
@@ -144,18 +141,17 @@ function Canvas() {
 
           <ResizableHandle />
 
-          <ResizablePanel defaultSize={20}>
-            <div className='flex-1 flex-grow bg-accent/50 w-full'>
-              <PSDLayerSidebar
-                psdData={psdData}
-                isVisible={isLayerSidebarVisible}
-                onClose={() => {
-                  setIsLayerSidebarVisible(false)
-                }}
-                onUpdate={handlePSDUpdate}
-              />
-            </div>
-          </ResizablePanel>
+          {/* 移除可调整大小的面板，改为绝对定位的固定面板 */}
+          <div className="absolute right-10 top-1/2 -translate-y-1/2 w-[20vw] h-[80vh] bg-accent/50 z-10">
+            <PSDLayerSidebar
+              psdData={psdData}
+              isVisible={isLayerSidebarVisible}
+              onClose={() => {
+                setIsLayerSidebarVisible(false)
+              }}
+              onUpdate={handlePSDUpdate}
+            />
+          </div>
         </ResizablePanelGroup>
       </div>
     </CanvasProvider>
