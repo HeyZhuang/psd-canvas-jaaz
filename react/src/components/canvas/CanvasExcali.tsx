@@ -163,18 +163,18 @@ const CanvasExcali: React.FC<CanvasExcaliProps> = ({
 
       excalidrawAPI.addFiles([file])
 
-      console.log('👇 Adding new image element to canvas:', imageElement.id)
-      console.log('👇 Image element properties:', {
-        id: imageElement.id,
-        type: imageElement.type,
-        locked: imageElement.locked,
-        groupIds: imageElement.groupIds,
-        isDeleted: imageElement.isDeleted,
-        x: imageElement.x,
-        y: imageElement.y,
-        width: imageElement.width,
-        height: imageElement.height,
-      })
+      // console.log('👇 Adding new image element to canvas:', imageElement.id)
+      // console.log('👇 Image element properties:', {
+      //   id: imageElement.id,
+      //   type: imageElement.type,
+      //   locked: imageElement.locked,
+      //   groupIds: imageElement.groupIds,
+      //   isDeleted: imageElement.isDeleted,
+      //   x: imageElement.x,
+      //   y: imageElement.y,
+      //   width: imageElement.width,
+      //   height: imageElement.height,
+      // })
 
       // Ensure image is not locked and can be manipulated
       const unlockedImageElement = {

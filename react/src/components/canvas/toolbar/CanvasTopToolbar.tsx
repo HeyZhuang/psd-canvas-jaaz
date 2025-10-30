@@ -38,7 +38,7 @@ export function CanvasTopToolbar() {
         // 创建新的对象引用，确保 React 能检测到变化
         setSelectedElement({ ...element })
         // 强制更新组件
-        setUpdateKey(prev => prev + 1)
+        // setUpdateKey(prev => prev + 1)
         
         if (element.type === 'text') {
           setSelectedElementType('text')

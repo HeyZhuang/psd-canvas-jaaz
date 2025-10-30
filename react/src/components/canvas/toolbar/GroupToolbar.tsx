@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import { useCanvas } from '@/contexts/canvas'
-import { 
+import {
   Layers,
   Merge,
   ChevronDown,
@@ -30,20 +30,190 @@ export function GroupToolbar() {
 
   const handleGroup = useCallback(() => {
     if (!excalidrawAPI) return
-    // Excalidraw 原生不支持 group，但可以通过 Ctrl+G 快捷键
-    console.log('Group action - use Ctrl+G')
+
+    // 获取选中的元素
+    const selectedElementIds = excalidrawAPI.getAppState().selectedElementIds
+    const allElements = excalidrawAPI.getSceneElements()
+    const selectedElements = allElements.filter(el => selectedElementIds[el.id])
+
+    // 至少需要两个元素才能分组
+    if (selectedElements.length < 2) {
+      console.log('至少需要选择两个元素才能进行分组')
+      return
+    }
+
+    // 生成一个新的group ID
+    const groupId = `${Date.now()}-${Math.random().toString(36)}`
+
+    // 为选中的元素添加group ID
+    const updatedElements = selectedElements.map(element => ({
+      ...element,
+      groupIds: [...element.groupIds, groupId]
+    }))
+
+    // 更新场景中的元素
+    excalidrawAPI.updateScene({
+      elements: allElements.map(el => {
+        const updatedElement = updatedElements.find(uEl => uEl.id === el.id)
+        return updatedElement ? updatedElement : el
+      })
+    })
+
+    console.log(`成功将 ${selectedElements.length} 个元素分组`)
+  }, [excalidrawAPI])
+
+  const handleUngroup = useCallback(() => {
+    if (!excalidrawAPI) return
+
+    // 获取选中的元素
+    const selectedElementIds = excalidrawAPI.getAppState().selectedElementIds
+    const allElements = excalidrawAPI.getSceneElements()
+    const selectedElements = allElements.filter(el => selectedElementIds[el.id])
+
+    // 至少需要一个元素才能取消分组
+    if (selectedElements.length < 1) {
+      console.log('至少需要选择一个元素才能取消分组')
+      return
+    }
+
+    // 移除选中元素的最后一个group ID（实现取消分组）
+    const updatedElements = selectedElements.map(element => {
+      const newElement = { ...element }
+      if (newElement.groupIds.length > 0) {
+        // 移除最后一个group ID
+        newElement.groupIds = newElement.groupIds.slice(0, -1)
+      }
+      return newElement
+    })
+
+    // 更新场景中的元素
+    excalidrawAPI.updateScene({
+      elements: allElements.map(el => {
+        const updatedElement = updatedElements.find(uEl => uEl.id === el.id)
+        return updatedElement ? updatedElement : el
+      })
+    })
+
+    console.log(`成功将 ${selectedElements.length} 个元素取消分组`)
   }, [excalidrawAPI])
 
   const handleAlign = useCallback((alignment: string) => {
     if (!excalidrawAPI) return
-    console.log('Align:', alignment)
-    // TODO: 实现对齐逻辑
+
+    // 获取选中的元素
+    const selectedElementIds = excalidrawAPI.getAppState().selectedElementIds
+    const allElements = excalidrawAPI.getSceneElements()
+    const selectedElements = allElements.filter(el => selectedElementIds[el.id])
+
+    if (selectedElements.length < 2) return
+
+    // 计算边界框
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+    selectedElements.forEach(element => {
+      minX = Math.min(minX, element.x)
+      minY = Math.min(minY, element.y)
+      maxX = Math.max(maxX, element.x + element.width)
+      maxY = Math.max(maxY, element.y + element.height)
+    })
+
+    const centerX = (minX + maxX) / 2
+    const centerY = (minY + maxY) / 2
+
+    // 根据对齐类型调整元素位置
+    const updatedElements = selectedElements.map(element => {
+      const newElement = { ...element }
+
+      switch (alignment) {
+        case 'left':
+          // 将元素的左侧对齐到整体的最左侧
+          newElement.x = minX
+          break
+        case 'horizontal-center':
+          // 将元素的中心对齐到整体的水平中心
+          newElement.x = centerX - element.width / 2
+          break
+        case 'right':
+          // 将元素的右侧对齐到整体的最右侧
+          newElement.x = maxX - element.width
+          break
+        case 'top':
+          // 将元素的顶部对齐到整体的顶部
+          newElement.y = minY
+          break
+        case 'vertical-center':
+          // 将元素的中心对齐到整体的垂直中心
+          newElement.y = centerY - element.height / 2
+          break
+        case 'bottom':
+          // 将元素的底部对齐到整体的底部
+          newElement.y = maxY - element.height
+          break
+      }
+
+      return newElement
+    })
+
+    // 更新场景
+    excalidrawAPI.updateScene({
+      elements: allElements.map(el => {
+        const updatedElement = updatedElements.find(uEl => uEl.id === el.id)
+        return updatedElement ? updatedElement : el
+      })
+    })
   }, [excalidrawAPI])
 
   const handleResize = useCallback((width: number, height: number) => {
     if (!excalidrawAPI) return
-    console.log('Resize to:', width, height)
-    // TODO: 实现调整大小逻辑
+
+    // 获取选中的元素
+    const selectedElementIds = excalidrawAPI.getAppState().selectedElementIds
+    const allElements = excalidrawAPI.getSceneElements()
+    const selectedElements = allElements.filter(el => selectedElementIds[el.id])
+
+    if (selectedElements.length === 0) return
+
+    // 计算当前选中元素的边界框
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+    selectedElements.forEach(element => {
+      minX = Math.min(minX, element.x)
+      minY = Math.min(minY, element.y)
+      maxX = Math.max(maxX, element.x + element.width)
+      maxY = Math.max(maxY, element.y + element.height)
+    })
+
+    const currentWidth = maxX - minX
+    const currentHeight = maxY - minY
+
+    // 计算缩放比例
+    const scaleX = width / currentWidth
+    const scaleY = height / currentHeight
+
+    // 根据缩放比例调整元素
+    const updatedElements = selectedElements.map(element => {
+      const newElement = { ...element }
+
+      // 相对于边界框左上角的位置比例
+      const ratioX = (element.x - minX) / currentWidth
+      const ratioY = (element.y - minY) / currentHeight
+      const ratioWidth = element.width / currentWidth
+      const ratioHeight = element.height / currentHeight
+
+      // 根据新尺寸调整元素位置和大小
+      newElement.x = minX + ratioX * width
+      newElement.y = minY + ratioY * height
+      newElement.width = ratioWidth * width
+      newElement.height = ratioHeight * height
+
+      return newElement
+    })
+
+    // 更新场景
+    excalidrawAPI.updateScene({
+      elements: allElements.map(el => {
+        const updatedElement = updatedElements.find(uEl => uEl.id === el.id)
+        return updatedElement ? updatedElement : el
+      })
+    })
   }, [excalidrawAPI])
 
   // 预设尺寸
@@ -82,10 +252,10 @@ export function GroupToolbar() {
         variant="ghost"
         size="sm"
         className="h-7 px-2 hover:bg-white/10"
-        onClick={() => console.log('Merge - not implemented')}
+        onClick={handleUngroup}
       >
         <Merge className="h-4 w-4 mr-1" />
-        <span className="text-xs">Merge</span>
+        <span className="text-xs">Ungroup</span>
       </Button>
 
       <Separator orientation="vertical" className="h-5 bg-gray-600" />
@@ -98,7 +268,7 @@ export function GroupToolbar() {
             <ChevronDown className="h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent 
+        <DropdownMenuContent
           className="bg-[#2a2a2a] text-white border-gray-700 w-48"
           align="start"
         >
@@ -135,7 +305,7 @@ export function GroupToolbar() {
             <ChevronDown className="h-3 w-3 ml-1" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent 
+        <DropdownMenuContent
           className="bg-[#2a2a2a] text-white border-gray-700 w-56 p-3"
           align="start"
         >
@@ -158,9 +328,9 @@ export function GroupToolbar() {
                 </div>
               </DropdownMenuItem>
             ))}
-            
+
             <DropdownMenuSeparator className="bg-gray-700" />
-            
+
             {/* 自定义尺寸 */}
             <div className="text-xs font-medium text-gray-400 uppercase mb-2">自定义尺寸</div>
             <div className="flex items-center gap-2">
@@ -170,6 +340,18 @@ export function GroupToolbar() {
                   placeholder="W"
                   className="h-7 bg-[#1e1e1e] border-gray-700 text-white text-xs"
                   onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const target = e.target as HTMLInputElement
+                      const width = parseInt(target.value)
+                      const heightInput = target.parentElement?.nextElementSibling?.nextElementSibling?.firstChild as HTMLInputElement
+                      const height = parseInt(heightInput?.value || '0')
+                      if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
+                        handleResize(width, height)
+                        setShowResizeMenu(false)
+                      }
+                    }
+                  }}
                 />
               </div>
               <span className="text-xs text-gray-400">×</span>
@@ -179,6 +361,18 @@ export function GroupToolbar() {
                   placeholder="H"
                   className="h-7 bg-[#1e1e1e] border-gray-700 text-white text-xs"
                   onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const target = e.target as HTMLInputElement
+                      const height = parseInt(target.value)
+                      const widthInput = target.parentElement?.previousElementSibling?.previousElementSibling?.firstChild as HTMLInputElement
+                      const width = parseInt(widthInput?.value || '0')
+                      if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
+                        handleResize(width, height)
+                        setShowResizeMenu(false)
+                      }
+                    }
+                  }}
                 />
               </div>
             </div>

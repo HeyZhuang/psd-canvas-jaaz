@@ -60,7 +60,7 @@ export function ShapeToolbar({ selectedElement }: ShapeToolbarProps) {
     }
   }, [selectedElement?.strokeStyle])
 
-  // 更新元素方法 - 只依赖 excalidrawAPI，使用 ref 获取元素 ID
+  // 更新元素方法
   const updateElement = useCallback((updates: Partial<ExcalidrawElement>) => {
     if (!excalidrawAPI) return
     
