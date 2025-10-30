@@ -63,6 +63,10 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
     const [canvasElements, setCanvasElements] = useState<any[]>([])
     const [lastUpdateTime, setLastUpdateTime] = useState<number>(0)
     const [showTemplateManager, setShowTemplateManager] = useState(false)
+    // UI 演示：顶部两类与资产子类
+    const [uiTopTab, setUiTopTab] = useState<'layers' | 'assets'>('layers')
+    const [assetSubTab, setAssetSubTab] = useState<'templates' | 'library' | 'fonts'>('library')
+    const [assetSource, setAssetSource] = useState<'platform' | 'uploads'>('platform')
 
     // 监听画布变化，实时同步图层状态
     useEffect(() => {
@@ -75,11 +79,11 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
             setCanvasElements(psdElements)
             setLastUpdateTime(Date.now())
 
-            console.log('图层列表同步更新:', {
-                totalElements: elements.length,
-                psdElements: psdElements.length,
-                timestamp: new Date().toLocaleTimeString()
-            })
+            // console.log('图层列表同步更新:', {
+            //     totalElements: elements.length,
+            //     psdElements: psdElements.length,
+            //     timestamp: new Date().toLocaleTimeString()
+            // })
         }
 
         // 初始更新
@@ -419,346 +423,146 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
         }
     }
 
-    console.log('PSDLayerSidebar 渲染狀態:', { isVisible, psdData: !!psdData, layersCount: psdData?.layers?.length })
+    // console.log('PSDLayerSidebar 渲染狀態:', { isVisible, psdData: !!psdData, layersCount: psdData?.layers?.length })
 
-    // 如果不可见，直接返回null
-    if (!isVisible) {
-        return null
-    }
+    // 始终显示面板，不受 isVisible 控制
+    // if (!isVisible) {
+    //     return null
+    // }
 
-    if (!psdData) {
-        console.log('PSDLayerSidebar 沒有 PSD 數據')
-        return null
-    }
+    // 如果没有 PSD 数据，显示空状态（但仍然渲染面板结构）
+    const hasData = psdData && psdData.layers && psdData.layers.length > 0
 
+    // 仅参照布局UI：顶部两类（Layers/Assets）+ 对应内容
     return (
         <div
-            className="fixed top-4 right-4 z-50 bg-background/95 backdrop-blur-sm border rounded-lg shadow-lg cursor-move"
-            style={{
-                width: '360px',
-                maxHeight: '80vh'
-            }}
+            className="bg-white text-foreground border border-border rounded-lg shadow-sm h-full w-full flex flex-col overflow-hidden"
+            style={{ height: "80vh" }}
         >
-            {/* 浮动面板头部 - 可拖拽 */}
-            <div
-                className="flex items-center justify-between p-2 border-b cursor-move min-w-0"
-                onMouseDown={(e) => {
-                    // 简单的拖拽实现
-                    const startX = e.clientX
-                    const startY = e.clientY
-                    const element = e.currentTarget.parentElement
-                    if (!element) return
-
-                    const startLeft = element.offsetLeft
-                    const startTop = element.offsetTop
-
-                    const handleMouseMove = (e: MouseEvent) => {
-                        const deltaX = e.clientX - startX
-                        const deltaY = e.clientY - startY
-                        element.style.left = `${startLeft + deltaX}px`
-                        element.style.top = `${startTop + deltaY}px`
-                        element.style.right = 'auto'
-                    }
-
-                    const handleMouseUp = () => {
-                        document.removeEventListener('mousemove', handleMouseMove)
-                        document.removeEventListener('mouseup', handleMouseUp)
-                    }
-
-                    document.addEventListener('mousemove', handleMouseMove)
-                    document.addEventListener('mouseup', handleMouseUp)
-                }}
-            >
-                <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
-                    <Layers className="h-4 w-4 flex-shrink-0" />
-                    <span className="text-sm font-medium whitespace-nowrap">图层列表</span>
-                    <Badge variant="secondary" className="text-xs flex-shrink-0">
-                        {filteredLayers.length}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs text-green-600 flex-shrink-0">
-                        实时同步
-                    </Badge>
-                </div>
-                <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                    {/* 模板管理按钮 */}
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-6 px-1.5 text-xs"
-                        onClick={() => setShowTemplateManager(true)}
-                        title="模板管理"
-                    >
-                        <Star className="h-3 w-3" />
-                    </Button>
-                    {/* 刷新按钮 */}
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0"
-                        onClick={() => {
-                            const elements = excalidrawAPI?.getSceneElements() || []
-                            const psdElements = elements.filter(element => element.customData?.psdFileId)
-                            setCanvasElements(psdElements)
-                            setLastUpdateTime(Date.now())
-
-                            // 调试信息
-                            console.log('刷新图层状态:', {
-                                totalElements: elements.length,
-                                psdElements: psdElements.length,
-                                psdElementsDetails: psdElements.map(el => ({
-                                    id: el.id,
-                                    layerIndex: el.customData?.psdLayerIndex,
-                                    layerName: el.customData?.layerName,
-                                    isDeleted: el.isDeleted,
-                                    opacity: el.opacity,
-                                    originalOpacity: el.customData?.originalOpacity,
-                                    customDataVisible: el.customData?.visible,
-                                    visible: !el.isDeleted && el.opacity > 0
-                                }))
-                            })
-
-                            toast.success('图层列表已刷新')
-                        }}
-                        title="刷新图层状态"
-                    >
-                        <div className="h-3 w-3 border border-current rounded-full animate-spin"></div>
-                    </Button>
-
-
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onClose}
-                        className="h-6 w-6 p-0"
-                        title="关闭"
-                    >
-                        <X className="h-3 w-3" />
-                    </Button>
-                </div>
+            {/* 顶部两个类型（统一指示条与选中态） */}
+            <div className="relative grid grid-cols-2 border-b border-border">
+                {(['layers', 'assets'] as const).map(top => (
+                    <div key={top} className="flex items-center justify-center py-2">
+                        <button
+                            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200 ${uiTopTab === top ? 'font-semibold shadow-sm' : 'opacity-70 hover:opacity-100'}`}
+                            onClick={() => setUiTopTab(top)}
+                        >
+                            {top === 'layers' ? <Layers className="h-4 w-4" /> : <span className="inline-block w-4 h-4">▦</span>}
+                            <span className="text-base">{top === 'layers' ? 'Layers' : 'Assets'}</span>
+                        </button>
+                    </div>
+                ))}
+                {/* 顶部滑动下划线 */}
+                <div
+                    className="absolute bottom-0 left-0 h-0.5 w-1/2 bg-foreground transition-transform duration-300 ease-out"
+                    style={{ transform: uiTopTab === 'layers' ? 'translateX(0%)' : 'translateX(100%)' }}
+                />
             </div>
 
-            <div className="flex flex-col">
-                {/* 搜索和过滤 */}
-                <div className="p-2 space-y-2 border-b">
-                    <Input
-                        placeholder="搜索图层..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="h-7 text-xs"
-                    />
-                    <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
-                        <SelectTrigger className="h-7 text-xs">
-                            <SelectValue placeholder="过滤类型" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">所有图层</SelectItem>
-                            <SelectItem value="text">文字图层</SelectItem>
-                            <SelectItem value="layer">图像图层</SelectItem>
-                            <SelectItem value="group">群组图层</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                {/* 图层列表 - 紧凑版本 */}
-                <div className="relative">
-                    <div
-                        className="flex-1 overflow-y-auto pr-2"
-                        style={{
-                            maxHeight: '300px',
-                            scrollbarWidth: 'thin',
-                            scrollbarColor: '#3b82f6 #f1f5f9'
-                        }}
-                    >
-                        <style dangerouslySetInnerHTML={{
-                            __html: `
-                                    .layer-scroll::-webkit-scrollbar {
-                                        width: 10px;
-                                    }
-                                    .layer-scroll::-webkit-scrollbar-track {
-                                        background: #f1f5f9;
-                                        border-radius: 5px;
-                                        border: 1px solid #e2e8f0;
-                                    }
-                                    .layer-scroll::-webkit-scrollbar-thumb {
-                                        background: #3b82f6;
-                                        border-radius: 5px;
-                                        border: 1px solid #2563eb;
-                                    }
-                                    .layer-scroll::-webkit-scrollbar-thumb:hover {
-                                        background: #2563eb;
-                                    }
-                                    .layer-scroll::-webkit-scrollbar-corner {
-                                        background: #f1f5f9;
-                                    }
-                                `
-                        }} />
-                        <div className="p-2 space-y-1 layer-scroll">
-                            {filteredLayers.map((layer) => {
-                                const canvasState = getLayerCanvasState(layer.index)
-                                const isVisible = canvasState.exists ? canvasState.visible : layer.visible
-                                const currentOpacity = canvasState.exists ? canvasState.opacity : Math.round((layer.opacity || 255) / 255 * 100)
-
-                                return (
-                                    <div key={layer.index} className="flex items-center gap-2 p-1 hover:bg-muted/50 rounded">
-                                        {/* 图层图标 */}
-                                        <div className="flex-shrink-0">
-                                            {getLayerIcon(layer)}
-                                        </div>
-
-                                        {/* 图层信息 */}
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-1">
-                                                <span className="text-xs font-medium truncate">
-                                                    {layer.name}
-                                                </span>
-                                                <Badge variant="secondary" className="text-xs px-1 py-0">
-                                                    {getLayerTypeLabel(layer)}
-                                                </Badge>
-                                                {canvasState.exists && (
-                                                    <Badge variant="outline" className="text-xs px-1 py-0 text-green-600">
-                                                        画布中
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                            <div className="text-xs text-muted-foreground">
-                                                {currentOpacity}%
-                                                {canvasState.exists && (
-                                                    <span className="ml-1 text-green-600">• 实时</span>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* 控制按钮 */}
-                                        <div className="flex items-center gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-6 w-6 p-0"
-                                                onClick={() => handleLayerVisibilityToggle(layer.index)}
-                                                title={isVisible ? '隐藏图层' : '显示图层'}
-                                            >
-                                                {isVisible ? (
-                                                    <Eye className="h-3 w-3" />
-                                                ) : (
-                                                    <EyeOff className="h-3 w-3 opacity-50" />
-                                                )}
-                                            </Button>
-
-                                            {layer.type === 'text' && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 w-6 p-0"
-                                                    onClick={() => setSelectedLayer(selectedLayer?.index === layer.index ? null : layer)}
-                                                    title="编辑文字"
-                                                >
-                                                    <Edit3 className="h-3 w-3" />
-                                                </Button>
-                                            )}
-
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-6 w-6 p-0"
-                                                onClick={() => handleSaveLayerAsTemplate(layer)}
-                                                title="保存为模板"
-                                            >
-                                                <Bookmark className="h-3 w-3" />
-                                            </Button>
-                                        </div>
+            {/* 主体内容 */}
+            {uiTopTab === 'layers' ? (
+                <div className="flex-1 flex flex-col overflow-hidden">
+                    <div className="p-3 border-b border-border">
+                        <Input
+                            placeholder="搜索图层..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="h-8 text-xs"
+                        />
+                    </div>
+                    <div className="flex-1 overflow-auto p-3 space-y-2">
+                        {[{ name: 'Header Group', type: 'group' }, { name: 'Main Content', type: 'group' }, { name: 'Background Shape', type: 'layer' }, { name: 'Footer Text', type: 'text' }]
+                            .filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                            .map((item, idx) => (
+                                <div key={idx} className="flex items-center justify-between px-3 py-2 rounded-lg border hover:bg-gray-50 transition-colors">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <span className="w-3 text-center">›</span>
+                                        {item.type === 'group' ? <FolderOpen className="h-4 w-4" /> : item.type === 'text' ? <Type className="h-4 w-4" /> : <ImageIcon className="h-4 w-4" />}
+                                        <span className="truncate">{item.name}</span>
                                     </div>
-                                )
-                            })}
-                        </div>
-
-                        {/* 滚动条指示器和状态 */}
-                        {filteredLayers.length > 8 && (
-                            <div className="absolute bottom-2 right-2 bg-background/90 backdrop-blur-sm rounded px-2 py-1 text-xs text-muted-foreground border shadow-sm">
-                                <div className="flex items-center gap-1">
-                                    <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
-                                    <span>实时同步</span>
-                                    <span className="text-xs">
-                                        {new Date(lastUpdateTime).toLocaleTimeString()}
-                                    </span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="opacity-60">🔒</span>
+                                        <Eye className="h-4 w-4" />
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-
-
+                            ))}
                     </div>
                 </div>
-
-                {/* 文字编辑浮动面板 */}
-                {selectedLayer && selectedLayer.type === 'text' && (
-                    <div className="p-2 border-t bg-muted/30">
-                        <div className="text-xs font-medium text-blue-600 mb-2">文字编辑</div>
-                        <div className="space-y-2">
-                            <Input
-                                value={(() => {
-                                    const canvasState = getLayerCanvasState(selectedLayer.index)
-                                    if (canvasState.exists && canvasState.element) {
-                                        // 从画布元素获取最新文字内容
-                                        return (canvasState.element as any).text || selectedLayer.text_content || selectedLayer.name || ''
-                                    }
-                                    // 从PSD数据获取文字内容
-                                    return selectedLayer.text_content || selectedLayer.name || ''
-                                })()}
-                                onChange={(e) => handleTextPropertyUpdate(selectedLayer.index, 'text_content', e.target.value)}
-                                placeholder="输入文字内容"
-                                className="text-xs h-7"
-                            />
-                            <div className="flex gap-1">
-                                <Button
-                                    variant={(() => {
-                                        const canvasState = getLayerCanvasState(selectedLayer.index)
-                                        const fontWeight = canvasState.exists && canvasState.element
-                                            ? ((canvasState.element as any).fontWeight >= 600 ? 'bold' : 'normal')
-                                            : selectedLayer.font_weight
-                                        return fontWeight === 'bold' ? 'default' : 'outline'
-                                    })()}
-                                    size="sm"
-                                    className="h-6 px-2"
-                                    onClick={() => handleTextPropertyUpdate(selectedLayer.index, 'font_weight',
-                                        (() => {
-                                            const canvasState = getLayerCanvasState(selectedLayer.index)
-                                            const currentWeight = canvasState.exists && canvasState.element
-                                                ? ((canvasState.element as any).fontWeight >= 600 ? 'bold' : 'normal')
-                                                : selectedLayer.font_weight
-                                            return currentWeight === 'bold' ? 'normal' : 'bold'
-                                        })()
-                                    )}
-                                >
-                                    <Bold className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                    variant={(() => {
-                                        const canvasState = getLayerCanvasState(selectedLayer.index)
-                                        const fontStyle = canvasState.exists && canvasState.element
-                                            ? (canvasState.element as any).fontStyle
-                                            : selectedLayer.font_style
-                                        return fontStyle === 'italic' ? 'default' : 'outline'
-                                    })()}
-                                    size="sm"
-                                    className="h-6 px-2"
-                                    onClick={() => handleTextPropertyUpdate(selectedLayer.index, 'font_style',
-                                        (() => {
-                                            const canvasState = getLayerCanvasState(selectedLayer.index)
-                                            const currentStyle = canvasState.exists && canvasState.element
-                                                ? (canvasState.element as any).fontStyle
-                                                : selectedLayer.font_style
-                                            return currentStyle === 'italic' ? 'normal' : 'italic'
-                                        })()
-                                    )}
-                                >
-                                    <Italic className="h-3 w-3" />
-                                </Button>
+            ) : (
+                <div className="flex-1 flex flex-col overflow-hidden">
+                    {/* 资产子级 Tabs */}
+                    <div className="px-3 pt-3">
+                        <div className="flex items-center text-sm">
+                            {(['templates', 'library', 'fonts'] as const).map(tab => (
+                                <div key={tab} className="flex-1 text-center">
+                                    <button
+                                        className={`py-2 w-full transition-all duration-200 ${assetSubTab === tab ? 'font-semibold' : 'opacity-70 hover:opacity-100'}`}
+                                        onClick={() => setAssetSubTab(tab)}
+                                    >
+                                        {tab === 'templates' ? 'Templates' : tab === 'library' ? 'Library' : 'Fonts'}
+                                    </button>
+                                    <div className={`${assetSubTab === tab ? 'bg-foreground' : 'bg-transparent'} h-0.5 w-10 mx-auto rounded transition-colors duration-200`}></div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="h-0.5 w-full bg-muted-foreground/20 mt-1" />
+                    </div>
+                    {/* 来源切换：仅在 Library 下显示 */}
+                    {assetSubTab === 'library' && (
+                        <div className="px-3 py-3 grid grid-cols-2 gap-2">
+                            <div className="text-center">
+                                <button className={`py-2 w-full rounded-md border text-sm transition-all duration-200 ${assetSource === 'platform' ? 'font-medium shadow-sm' : 'opacity-80 hover:opacity-100'}`} onClick={() => setAssetSource('platform')}>Platform</button>
+                                <div className={`${assetSource === 'platform' ? 'bg-foreground' : 'bg-transparent'} h-0.5 w-10 mx-auto rounded mt-1 transition-colors`}></div>
+                            </div>
+                            <div className="text-center">
+                                <button className={`py-2 w-full rounded-md border text-sm transition-all duration-200 ${assetSource === 'uploads' ? 'font-medium shadow-sm' : 'opacity-80 hover:opacity-100'}`} onClick={() => setAssetSource('uploads')}>My Uploads</button>
+                                <div className={`${assetSource === 'uploads' ? 'bg-foreground' : 'bg-transparent'} h-0.5 w-10 mx-auto rounded mt-1 transition-colors`}></div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )}
+                    {/* 内容区：根据 Templates / Library / Fonts 显示不同结构 */}
+                    {assetSubTab === 'templates' && (
+                        <div className="p-3 space-y-2 overflow-auto">
+                            {['Social Media Posts', 'Marketing Banners', 'Blog Thumbnails'].map((folder, idx) => (
+                                <div key={idx} className="flex items-center justify-between px-3 py-3 rounded-lg border bg-gray-50/40 hover:bg-gray-100/60 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <FolderOpen className="h-5 w-5 opacity-80" />
+                                        <span className="text-base">{folder}</span>
+                                    </div>
+                                    <span className="opacity-60">›</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {assetSubTab === 'library' && (
+                        <div className="grid grid-cols-3 gap-3 p-3 overflow-auto">
+                            {Array.from({ length: 12 }).map((_, i) => (
+                                <div key={i} className="aspect-square rounded-xl border bg-gray-50/60 hover:bg-gray-100/80 shadow-sm hover:shadow-md transition-all overflow-hidden">
+                                    <div className="w-full h-full flex items-center justify-center text-sm">
+                                        library {i + 1}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {assetSubTab === 'fonts' && (
+                        <div className="flex-1 flex flex-col overflow-hidden">
+                            <div className="px-3 pt-3">
+                                <Input placeholder="Search fonts" className="h-9 text-sm" />
+                            </div>
+                            <div className="p-3 space-y-2 overflow-auto">
+                                {['Roboto', 'Lato', 'Montserrat', 'Open Sans', 'Playfair Display', 'Inter', 'Noto Sans', 'Poppins'].map((font, idx) => (
+                                    <button key={idx} className="w-full text-left px-4 py-3 rounded-lg border bg-gray-50/40 hover:bg-gray-100/80 shadow-sm hover:shadow-md transition-colors">
+                                        <span className="text-base">{font}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
-            {/* 模板管理器 */}
+            {/* 模板管理器（保留占位） */}
             <TemplateManager
                 isOpen={showTemplateManager}
                 onClose={() => setShowTemplateManager(false)}

@@ -40,7 +40,10 @@
     "shape": "形状",
     "arrow": "箭头",
     "line": "直线",
-    "zoomFit": "缩放适应"
+    "zoomFit": "缩放适应",
+    "freedraw": "自由绘制",
+    "plus": "上传",
+    "frame": "框架"
   },
   "popbar": {
     "addToChat": "添加到聊天",

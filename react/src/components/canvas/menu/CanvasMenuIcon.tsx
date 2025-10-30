@@ -2,12 +2,14 @@ import { ToolType as ExcalidrawToolType } from '@excalidraw/excalidraw/types'
 import {
   ArrowUpRight,
   Circle,
+  Frame,
   Hand,
   Image,
   Link,
   Minus,
   MousePointer2,
   Pencil,
+  Plus,
   Square,
   Type,
 } from 'lucide-react'
@@ -25,7 +27,8 @@ export type ToolType = Extract<
   | 'image'
   | 'embeddable'
   | 'lock'
->
+  | 'frame'
+> | 'plus'
 
 const icons: Record<ToolType, React.ComponentType<{ className?: string }>> = {
   hand: Hand,
@@ -38,6 +41,8 @@ const icons: Record<ToolType, React.ComponentType<{ className?: string }>> = {
   text: Type,
   image: Image,
   embeddable: Link,
+  frame: Frame,
+  plus: Plus,
 }
 
 export const toolShortcuts: Record<ToolType, string> = {
@@ -51,6 +56,8 @@ export const toolShortcuts: Record<ToolType, string> = {
   text: 'T',
   image: '9',
   embeddable: '',
+  frame: 'F',
+  plus: 'U',
 }
 
 export default icons
