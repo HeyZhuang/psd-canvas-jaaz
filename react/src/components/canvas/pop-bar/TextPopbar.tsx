@@ -40,6 +40,8 @@ export function TextPopbar({ selectedElement }: TextPopbarProps) {
     'Courier New', 'Comic Sans MS', 'Impact', 'Cascadia', 'Virgil'
   ]
 
+
+
   const fontSizes = [8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 64, 72, 96]
 
   // 从选中元素同步状态

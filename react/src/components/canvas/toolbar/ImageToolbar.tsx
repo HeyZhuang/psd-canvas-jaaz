@@ -8,7 +8,6 @@ import {
   Scissors
 } from 'lucide-react'
 import { ExcalidrawImageElement } from '@excalidraw/excalidraw/element/types'
-import { useState, useEffect, useCallback, useRef } from 'react'
 
 interface ImageToolbarProps {
   selectedElement: ExcalidrawImageElement
