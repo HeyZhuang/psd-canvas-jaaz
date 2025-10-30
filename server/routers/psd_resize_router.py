@@ -8,11 +8,14 @@ import os
 import json
 import base64
 import tempfile
+import time
+import shutil
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import FileResponse
 import logging
+from psd_tools import PSDImage
 
 from services.gemini_psd_resize_service import GeminiPSDResizeService
 from utils.psd_layer_info import get_psd_layers_info, draw_detection_boxes
@@ -750,6 +753,647 @@ async def get_layered_psd_image(file_id: str, layer_index: int):
     except Exception as e:
         logger.error(f"獲取圖層圖像失敗: {e}")
         raise HTTPException(status_code=500, detail=f"獲取圖層圖像失敗: {str(e)}")
+
+
+@router.post("/resize-selected-layers")
+async def resize_selected_layers(
+    file_id: str = Form(...),
+    target_width: int = Form(...),
+    target_height: int = Form(...),
+    layer_indices: str = Form(...),
+    api_key: Optional[str] = Form(None)
+):
+    """
+    对选中的图层进行智能缩放
+    
+    Args:
+        file_id: PSD文件ID
+        target_width: 目标宽度
+        target_height: 目标高度
+        layer_indices: 选中图层的索引（JSON数组字符串）
+        api_key: Gemini API密钥（可选）
+    
+    Returns:
+        缩放后的图层信息和图片URL
+    """
+    try:
+        # 解析图层索引
+        try:
+            selected_indices = json.loads(layer_indices)
+            if not isinstance(selected_indices, list):
+                raise ValueError("layer_indices must be a list")
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=400, detail=f"无效的layer_indices格式: {e}")
+        
+        logger.info(f"处理选中图层缩放: file_id={file_id}, selected_indices={selected_indices}")
+        
+        # 获取PSD文件路径
+        psd_file_path = os.path.join(PSD_DIR, f"{file_id}.psd")
+        if not os.path.exists(psd_file_path):
+            raise HTTPException(status_code=404, detail=f"PSD文件未找到: {file_id}")
+        
+        # 步骤1: 提取所有图层信息
+        logger.info("步骤1: 提取PSD图层信息")
+        psd, all_layers_info = get_psd_layers_info(psd_file_path)
+        original_width = psd.width
+        original_height = psd.height
+        
+        # 过滤出选中的图层
+        selected_layers = [
+            layer for layer in all_layers_info
+            if layer['index'] in selected_indices
+        ]
+        
+        if not selected_layers:
+            raise HTTPException(status_code=400, detail="没有找到选中的图层")
+        
+        logger.info(f"原始尺寸: {original_width}x{original_height}")
+        logger.info(f"目标尺寸: {target_width}x{target_height}")
+        logger.info(f"选中图层数量: {len(selected_layers)}")
+        logger.info(f"选中图层: {[layer['name'] for layer in selected_layers]}")
+        
+        # 创建临时目录
+        temp_dir = tempfile.mkdtemp()
+        
+        # 生成检测框图像（仅包含选中的图层）
+        detection_image_path = os.path.join(temp_dir, "detection.png")
+        draw_detection_boxes(psd, selected_layers, detection_image_path)
+        
+        # 步骤2: 使用Gemini分析选中的图层
+        logger.info("步骤2: 调用Gemini API分析选中图层")
+        service = GeminiPSDResizeService(api_key=api_key)
+        
+        new_positions = await service.resize_selected_layers(
+            layers_info=selected_layers,
+            detection_image_path=detection_image_path,
+            original_width=original_width,
+            original_height=original_height,
+            target_width=target_width,
+            target_height=target_height
+        )
+        
+        # 步骤3: 为每个选中的图层生成缩放后的图片
+        logger.info("步骤3: 生成缩放后的图层图片")
+        resized_layers = []
+        
+        for layer_info, new_pos in zip(selected_layers, new_positions):
+            layer_index = layer_info['index']
+            
+            # 从PSD中提取单个图层并缩放
+            layer = psd[layer_index]
+            
+            # 应用新的位置和尺寸
+            from PIL import Image
+            import numpy as np
+            
+            try:
+                # 获取图层的图像数据
+                layer_image = layer.topil()
+                if layer_image is None:
+                    logger.warning(f"图层 {layer_index} 无法转换为图片，跳过")
+                    continue
+                
+                # 计算缩放后的尺寸
+                new_width = new_pos.get('width', layer_info['width'])
+                new_height = new_pos.get('height', layer_info['height'])
+                
+                # 缩放图层图片
+                resized_layer_image = layer_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                
+                # 保存缩放后的图层
+                output_filename = f"{file_id}_layer_{layer_index}_resized.png"
+                output_path = os.path.join(PSD_DIR, output_filename)
+                resized_layer_image.save(output_path, 'PNG')
+                
+                resized_layers.append({
+                    "layer_index": layer_index,
+                    "layer_name": layer_info['name'],
+                    "original_bounds": layer_info['bounds'],
+                    "new_bounds": new_pos,
+                    "width": new_width,
+                    "height": new_height,
+                    "image_url": f"/api/psd/resize/output-layer/{file_id}/{layer_index}"
+                })
+                
+                logger.info(f"图层 {layer_index} ({layer_info['name']}) 缩放完成")
+                
+            except Exception as e:
+                logger.error(f"处理图层 {layer_index} 失败: {e}")
+                continue
+        
+        if not resized_layers:
+            raise HTTPException(status_code=500, detail="没有成功生成任何缩放后的图层")
+        
+        # 保存元数据
+        metadata = {
+            "file_id": file_id,
+            "selected_indices": selected_indices,
+            "original_size": {"width": original_width, "height": original_height},
+            "target_size": {"width": target_width, "height": target_height},
+            "layers": resized_layers
+        }
+        
+        metadata_path = os.path.join(PSD_DIR, f"{file_id}_selected_layers_metadata.json")
+        with open(metadata_path, 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, ensure_ascii=False, indent=2)
+        
+        logger.info(f"选中图层缩放完成，共处理 {len(resized_layers)} 个图层")
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "original_size": {"width": original_width, "height": original_height},
+            "target_size": {"width": target_width, "height": target_height},
+            "layers": resized_layers,
+            "count": len(resized_layers)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"选中图层缩放失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"选中图层缩放失败: {str(e)}")
+    
+    finally:
+        # 清理临时文件
+        try:
+            import shutil
+            if 'temp_dir' in locals():
+                shutil.rmtree(temp_dir, ignore_errors=True)
+        except Exception:
+            pass
+
+
+@router.get("/output-layer/{file_id}/{layer_index}")
+async def get_resized_layer_output(file_id: str, layer_index: int):
+    """
+    获取缩放后的单个图层图像
+    
+    Args:
+        file_id: 文件ID
+        layer_index: 图层索引
+    
+    Returns:
+        缩放后的PNG图像
+    """
+    png_path = os.path.join(PSD_DIR, f"{file_id}_layer_{layer_index}_resized.png")
+    
+    if not os.path.exists(png_path):
+        raise HTTPException(status_code=404, detail="图层输出文件未找到")
+    
+    return FileResponse(png_path, media_type="image/png")
+
+
+@router.post("/preview-selected-layers")
+async def preview_selected_layers(
+    file_id: str = Form(...),
+    layer_indices: str = Form(...),
+    target_width: int = Form(...),
+    target_height: int = Form(...),
+    api_key: Optional[str] = Form(None)
+):
+    """
+    预览选中图层的缩放效果（不实际执行缩放）
+    
+    Returns:
+        预览数据，包括图层的新位置和缩略图
+    """
+    try:
+        selected_indices = json.loads(layer_indices)
+        
+        logger.info(f"预览选中图层: file_id={file_id}, layer_indices={selected_indices}")
+        
+        # 获取PSD文件
+        psd_file_path = os.path.join(PSD_DIR, f"{file_id}.psd")
+        if not os.path.exists(psd_file_path):
+            raise HTTPException(status_code=404, detail=f"PSD文件未找到: {file_id}")
+        
+        psd, all_layers_info = get_psd_layers_info(psd_file_path)
+        
+        # 过滤选中的图层
+        selected_layers = [
+            layer for layer in all_layers_info
+            if layer['index'] in selected_indices
+        ]
+        
+        if not selected_layers:
+            raise HTTPException(status_code=400, detail="没有找到选中的图层")
+        
+        logger.info(f"原始尺寸: {psd.width}x{psd.height}")
+        logger.info(f"目标尺寸: {target_width}x{target_height}")
+        logger.info(f"选中图层数量: {len(selected_layers)}")
+        
+        # 创建临时目录
+        temp_dir = tempfile.mkdtemp()
+        
+        try:
+            # 生成检测框图像
+            detection_image_path = os.path.join(temp_dir, "detection.png")
+            draw_detection_boxes(psd, selected_layers, detection_image_path)
+            
+            # 调用Gemini API获取预测位置
+            service = GeminiPSDResizeService(api_key=api_key)
+            new_positions = await service.resize_selected_layers(
+                layers_info=selected_layers,
+                detection_image_path=detection_image_path,
+                original_width=psd.width,
+                original_height=psd.height,
+                target_width=target_width,
+                target_height=target_height
+            )
+            
+            # 生成图层缩略图
+            preview_layers = []
+            for layer_info, new_pos in zip(selected_layers, new_positions):
+                # 生成缩略图
+                thumbnail_url = generate_layer_thumbnail(psd, layer_info['index'], file_id)
+                
+                preview_layers.append({
+                    "index": layer_info['index'],
+                    "name": layer_info['name'],
+                    "type": layer_info.get('type', 'layer'),
+                    "original": {
+                        "x": layer_info['bounds']['left'],
+                        "y": layer_info['bounds']['top'],
+                        "width": layer_info['width'],
+                        "height": layer_info['height'],
+                        "opacity": layer_info.get('opacity', 100)
+                    },
+                    "preview": {
+                        "x": new_pos.get('x', layer_info['bounds']['left']),
+                        "y": new_pos.get('y', layer_info['bounds']['top']),
+                        "width": new_pos.get('width', layer_info['width']),
+                        "height": new_pos.get('height', layer_info['height']),
+                        "opacity": layer_info.get('opacity', 100)
+                    },
+                    "thumbnailUrl": thumbnail_url,
+                    "isAdjusted": False
+                })
+            
+            logger.info(f"预览数据生成成功，共 {len(preview_layers)} 个图层")
+            
+            return {
+                "success": True,
+                "fileId": file_id,
+                "originalSize": {
+                    "width": psd.width,
+                    "height": psd.height
+                },
+                "targetSize": {
+                    "width": target_width,
+                    "height": target_height
+                },
+                "layers": preview_layers,
+                "timestamp": int(time.time() * 1000)
+            }
+            
+        finally:
+            # 清理临时文件
+            if os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"预览选中图层失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"预览失败: {str(e)}")
+
+
+def generate_layer_thumbnail(psd, layer_index: int, file_id: str, max_size: int = 100) -> str:
+    """生成图层缩略图"""
+    try:
+        from PIL import Image
+        
+        layer = psd[layer_index]
+        layer_image = layer.topil()
+        
+        if layer_image:
+            # 缩放到缩略图尺寸
+            layer_image.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+            
+            # 保存缩略图
+            thumbnail_filename = f"thumbnail_{file_id}_{layer_index}_{int(time.time())}.png"
+            thumbnail_path = os.path.join(PSD_DIR, thumbnail_filename)
+            layer_image.save(thumbnail_path, 'PNG')
+            
+            return f"/api/psd/resize/thumbnail/{thumbnail_filename}"
+        
+        # 如果无法生成缩略图，返回占位符
+        return "/api/psd/resize/thumbnail/placeholder.png"
+        
+    except Exception as e:
+        logger.warning(f"生成缩略图失败: {e}")
+        return "/api/psd/resize/thumbnail/placeholder.png"
+
+
+@router.get("/thumbnail/{filename}")
+async def get_thumbnail(filename: str):
+    """获取缩略图"""
+    thumbnail_path = os.path.join(PSD_DIR, filename)
+    
+    if not os.path.exists(thumbnail_path):
+        raise HTTPException(status_code=404, detail="缩略图未找到")
+    
+    return FileResponse(thumbnail_path, media_type="image/png")
+
+
+@router.post("/export")
+async def export_resized_psd(
+    file_id: str = Form(...),
+    export_options: str = Form(...),
+    resized_layers: Optional[str] = Form(None)
+):
+    """
+    导出缩放后的PSD为各种格式
+    """
+    try:
+        import time
+        
+        options = json.loads(export_options)
+        export_format = options.get('format', 'png')
+        
+        logger.info(f"开始导出: file_id={file_id}, format={export_format}")
+        
+        # 获取PSD文件
+        psd_file_path = os.path.join(PSD_DIR, f"{file_id}.psd")
+        if not os.path.exists(psd_file_path):
+            raise HTTPException(status_code=404, detail="PSD文件未找到")
+        
+        psd = PSDImage.open(psd_file_path)
+        
+        # 根据格式导出
+        if export_format == 'png':
+            output_path = export_as_png(psd, file_id, options)
+        elif export_format == 'psd':
+            output_path = export_as_psd(psd, file_id, options, resized_layers)
+        elif export_format == 'layered-png':
+            output_path = export_as_layered_png(psd, file_id, options)
+        else:
+            raise HTTPException(status_code=400, detail="不支持的导出格式")
+        
+        # 生成下载URL
+        filename = os.path.basename(output_path)
+        download_url = f"/api/psd/resize/download/{filename}"
+        
+        file_size = os.path.getsize(output_path)
+        
+        logger.info(f"导出成功: {filename}, 大小: {file_size} bytes")
+        
+        return {
+            "success": True,
+            "download_url": download_url,
+            "file_size": file_size,
+            "format": export_format,
+            "filename": filename
+        }
+        
+    except Exception as e:
+        logger.error(f"导出失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"导出失败: {str(e)}")
+
+
+def export_as_png(psd: PSDImage, file_id: str, options: dict) -> str:
+    """导出为单张PNG"""
+    from PIL import Image
+    
+    quality = options.get('quality', 'high')
+    png_options = options.get('pngOptions', {})
+    
+    # 合并所有可见图层
+    merged_image = psd.composite()
+    
+    # 应用质量设置
+    if quality == 'low':
+        merged_image = merged_image.resize(
+            (merged_image.width // 2, merged_image.height // 2),
+            Image.Resampling.LANCZOS
+        )
+    elif quality == 'medium':
+        # 中等质量不缩放
+        pass
+    
+    # 处理背景
+    background = png_options.get('background', 'transparent')
+    if background != 'transparent' and merged_image.mode == 'RGBA':
+        bg_color = png_options.get('customBackground', '#FFFFFF') if background == 'custom' else '#FFFFFF'
+        
+        # 创建背景图像
+        bg_image = Image.new('RGB', merged_image.size, bg_color)
+        bg_image.paste(merged_image, (0, 0), merged_image)
+        merged_image = bg_image
+    
+    # 保存
+    output_filename = f"{file_id}_export_{int(time.time())}.png"
+    output_path = os.path.join(PSD_DIR, output_filename)
+    
+    compression = png_options.get('compression', 6)
+    merged_image.save(output_path, 'PNG', compress_level=compression)
+    
+    return output_path
+
+
+def export_as_psd(psd: PSDImage, file_id: str, options: dict, resized_layers: str = None) -> str:
+    """导出为PSD文件"""
+    # 保存为新的PSD文件
+    output_filename = f"{file_id}_export_{int(time.time())}.psd"
+    output_path = os.path.join(PSD_DIR, output_filename)
+    
+    # 直接保存原PSD（简化版本）
+    psd.save(output_path)
+    
+    return output_path
+
+
+def export_as_layered_png(psd: PSDImage, file_id: str, options: dict) -> str:
+    """导出为分层PNG（ZIP文件）"""
+    from PIL import Image
+    import re
+    
+    layered_options = options.get('layeredPngOptions', {})
+    naming_pattern = layered_options.get('namingPattern', '{layer_name}_{index}.png')
+    include_hidden = options.get('includeHiddenLayers', False)
+    
+    # 创建临时目录
+    temp_dir = tempfile.mkdtemp()
+    
+    try:
+        # 导出每个图层
+        for i, layer in enumerate(psd):
+            if not layer.visible and not include_hidden:
+                continue
+            
+            layer_image = layer.topil()
+            if layer_image:
+                # 生成文件名
+                filename = naming_pattern.format(
+                    layer_name=sanitize_filename(layer.name),
+                    index=i,
+                    type=layer.kind or 'layer'
+                )
+                if not filename.endswith('.png'):
+                    filename += '.png'
+                
+                layer_path = os.path.join(temp_dir, filename)
+                layer_image.save(layer_path, 'PNG')
+        
+        # 创建ZIP文件
+        zip_filename = f"{file_id}_layers_{int(time.time())}.zip"
+        zip_path = os.path.join(PSD_DIR, zip_filename)
+        
+        shutil.make_archive(
+            zip_path.replace('.zip', ''),
+            'zip',
+            temp_dir
+        )
+        
+        return zip_path
+        
+    finally:
+        # 清理临时目录
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def sanitize_filename(filename: str) -> str:
+    """清理文件名，移除非法字符"""
+    import re
+    filename = re.sub(r'[<>:"/\\|?*]', '_', filename)
+    filename = filename.strip()
+    return filename[:200]  # 限制长度
+
+
+@router.get("/download/{filename}")
+async def download_file(filename: str):
+    """下载导出的文件"""
+    file_path = os.path.join(PSD_DIR, filename)
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="文件未找到")
+    
+    # 根据文件扩展名确定媒体类型
+    if filename.endswith('.png'):
+        media_type = "image/png"
+    elif filename.endswith('.psd'):
+        media_type = "application/octet-stream"
+    elif filename.endswith('.zip'):
+        media_type = "application/zip"
+    else:
+        media_type = "application/octet-stream"
+    
+    return FileResponse(
+        file_path,
+        media_type=media_type,
+        filename=filename
+    )
+
+
+@router.post("/preview-full-psd")
+async def preview_full_psd(
+    file_id: str = Form(...),
+    target_width: int = Form(...),
+    target_height: int = Form(...),
+    api_key: Optional[str] = Form(None)
+):
+    """
+    预览整个 PSD 文件的缩放效果（所有图层）
+    
+    Returns:
+        预览数据，包括所有图层的新位置和缩略图
+    """
+    try:
+        logger.info(f"预览完整PSD: file_id={file_id}")
+        
+        # 获取PSD文件
+        psd_file_path = os.path.join(PSD_DIR, f"{file_id}.psd")
+        if not os.path.exists(psd_file_path):
+            raise HTTPException(status_code=404, detail=f"PSD文件未找到: {file_id}")
+        
+        psd, all_layers_info = get_psd_layers_info(psd_file_path)
+        
+        logger.info(f"原始尺寸: {psd.width}x{psd.height}")
+        logger.info(f"目标尺寸: {target_width}x{target_height}")
+        logger.info(f"图层总数: {len(all_layers_info)}")
+        
+        # 创建临时目录
+        temp_dir = tempfile.mkdtemp()
+        
+        try:
+            # 生成检测框图像（包含所有图层）
+            detection_image_path = os.path.join(temp_dir, "detection.png")
+            draw_detection_boxes(psd, all_layers_info, detection_image_path)
+            
+            # 调用Gemini API获取预测位置
+            service = GeminiPSDResizeService(api_key=api_key)
+            new_positions = await service.resize_psd_layers(
+                layers_info=all_layers_info,
+                detection_image_path=detection_image_path,
+                original_width=psd.width,
+                original_height=psd.height,
+                target_width=target_width,
+                target_height=target_height
+            )
+            
+            # 生成图层缩略图
+            preview_layers = []
+            for layer_info in all_layers_info:
+                # 查找对应的新位置
+                new_pos = next(
+                    (pos for pos in new_positions if pos.get('id') == layer_info['index']), 
+                    None
+                )
+                
+                # 生成缩略图
+                thumbnail_url = generate_layer_thumbnail(psd, layer_info['index'], file_id)
+                
+                preview_layers.append({
+                    "index": layer_info['index'],
+                    "name": layer_info['name'],
+                    "type": layer_info.get('type', 'layer'),
+                    "visible": layer_info.get('visible', True),
+                    "original": {
+                        "x": layer_info['bounds']['left'],
+                        "y": layer_info['bounds']['top'],
+                        "width": layer_info['width'],
+                        "height": layer_info['height'],
+                        "opacity": layer_info.get('opacity', 100)
+                    },
+                    "preview": {
+                        "x": new_pos.get('x', layer_info['bounds']['left']) if new_pos else layer_info['bounds']['left'],
+                        "y": new_pos.get('y', layer_info['bounds']['top']) if new_pos else layer_info['bounds']['top'],
+                        "width": new_pos.get('width', layer_info['width']) if new_pos else layer_info['width'],
+                        "height": new_pos.get('height', layer_info['height']) if new_pos else layer_info['height'],
+                        "opacity": layer_info.get('opacity', 100)
+                    },
+                    "thumbnailUrl": thumbnail_url,
+                    "isAdjusted": False
+                })
+            
+            logger.info(f"预览数据生成成功，共 {len(preview_layers)} 个图层")
+            
+            return {
+                "success": True,
+                "fileId": file_id,
+                "originalSize": {
+                    "width": psd.width,
+                    "height": psd.height
+                },
+                "targetSize": {
+                    "width": target_width,
+                    "height": target_height
+                },
+                "layers": preview_layers,
+                "timestamp": int(time.time() * 1000)
+            }
+            
+        finally:
+            # 清理临时文件
+            if os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"预览完整PSD失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"预览失败: {str(e)}")
 
 
 @router.get("/health")

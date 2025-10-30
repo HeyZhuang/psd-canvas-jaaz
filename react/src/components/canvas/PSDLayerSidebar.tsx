@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import {
@@ -30,6 +31,7 @@ import {
     Underline,
     Bookmark,
     Star,
+    Sparkles,
 } from 'lucide-react'
 import {
     updateLayerProperties,
@@ -49,14 +51,16 @@ interface PSDLayerSidebarProps {
     isVisible: boolean
     onClose: () => void
     onUpdate: (updatedPsdData: any) => void
+    onBatchResize?: (selectedLayerIndices: number[]) => void // 新增：批量缩放回调
 }
 
-export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLayerSidebarProps) {
+export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate, onBatchResize }: PSDLayerSidebarProps) {
     const { t } = useTranslation()
     const { excalidrawAPI } = useCanvas()
 
     // 状态管理
     const [selectedLayer, setSelectedLayer] = useState<PSDLayer | null>(null)
+    const [selectedLayers, setSelectedLayers] = useState<Set<number>>(new Set()) // 新增：多选图层
     const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set())
     const [searchTerm, setSearchTerm] = useState('')
     const [filterType, setFilterType] = useState<'all' | 'text' | 'layer' | 'group'>('all')
@@ -395,6 +399,49 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
         }
     }, [psdData])
 
+    // 图层多选处理
+    const handleLayerSelect = useCallback((layerIndex: number, checked: boolean) => {
+        setSelectedLayers(prev => {
+            const newSet = new Set(prev)
+            if (checked) {
+                newSet.add(layerIndex)
+            } else {
+                newSet.delete(layerIndex)
+            }
+            console.log('图层选择变化:', { layerIndex, checked, totalSelected: newSet.size })
+            return newSet
+        })
+    }, [])
+
+    // 全选/取消全选
+    const handleSelectAll = useCallback(() => {
+        if (selectedLayers.size === filteredLayers.length) {
+            setSelectedLayers(new Set())
+            toast.info('已取消全选')
+        } else {
+            const allIndices = new Set(filteredLayers.map(l => l.index))
+            setSelectedLayers(allIndices)
+            toast.success(`已选择 ${allIndices.size} 个图层`)
+        }
+    }, [selectedLayers.size, filteredLayers])
+
+    // 批量智能缩放
+    const handleBatchResize = useCallback(() => {
+        if (selectedLayers.size === 0) {
+            toast.error('请先选择要缩放的图层')
+            return
+        }
+
+        const selectedIndices = Array.from(selectedLayers)
+        console.log('开始批量缩放:', selectedIndices)
+
+        if (onBatchResize) {
+            onBatchResize(selectedIndices)
+        } else {
+            toast.error('批量缩放功能未配置')
+        }
+    }, [selectedLayers, onBatchResize])
+
     // 获取图层图标
     const getLayerIcon = (layer: PSDLayer) => {
         switch (layer.type) {
@@ -559,6 +606,32 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
                     </Select>
                 </div>
 
+                {/* 批量操作工具栏 */}
+                <div className="p-2 space-y-2 border-b bg-blue-50/50 dark:bg-blue-950/20">
+                    <div className="flex items-center gap-2">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleSelectAll}
+                            className="h-7 text-xs flex-1"
+                        >
+                            {selectedLayers.size === filteredLayers.length ? '取消全选' : '全选'}
+                        </Button>
+                        <Badge variant="secondary" className="text-xs">
+                            已选 {selectedLayers.size}
+                        </Badge>
+                    </div>
+                    <Button
+                        size="sm"
+                        onClick={handleBatchResize}
+                        disabled={selectedLayers.size === 0}
+                        className="h-7 text-xs w-full"
+                    >
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        智能缩放选中图层
+                    </Button>
+                </div>
+
                 {/* 图层列表 - 紧凑版本 */}
                 <div className="relative">
                     <div
@@ -600,6 +673,14 @@ export function PSDLayerSidebar({ psdData, isVisible, onClose, onUpdate }: PSDLa
 
                                 return (
                                     <div key={layer.index} className="flex items-center gap-2 p-1 hover:bg-muted/50 rounded">
+                                        {/* 复选框 */}
+                                        <div className="flex-shrink-0">
+                                            <Checkbox
+                                                checked={selectedLayers.has(layer.index)}
+                                                onCheckedChange={(checked) => handleLayerSelect(layer.index, checked as boolean)}
+                                            />
+                                        </div>
+
                                         {/* 图层图标 */}
                                         <div className="flex-shrink-0">
                                             {getLayerIcon(layer)}

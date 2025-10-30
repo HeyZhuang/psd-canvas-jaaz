@@ -6,6 +6,7 @@ import CanvasPopbarWrapper from '@/components/canvas/pop-bar'
 // VideoCanvasOverlay removed - using native Excalidraw embeddable elements instead
 import ChatInterface from '@/components/chat/Chat'
 import { PSDLayerSidebar } from '@/components/canvas/PSDLayerSidebar'
+import { PSDResizeDialog } from '@/components/canvas/PSDResizeDialog'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { CanvasProvider } from '@/contexts/canvas'
 import { Session } from '@/types/types'
@@ -30,6 +31,10 @@ function Canvas() {
   // PSD图层侧边栏状态
   const [psdData, setPsdData] = useState<PSDUploadResponse | null>(null)
   const [isLayerSidebarVisible, setIsLayerSidebarVisible] = useState(false)
+
+  // PSD智能缩放对话框状态
+  const [showResizeDialog, setShowResizeDialog] = useState(false)
+  const [selectedLayerIndices, setSelectedLayerIndices] = useState<number[]>([])
   const search = useSearch({ from: '/canvas/$id' }) as {
     sessionId: string
   }
@@ -84,6 +89,13 @@ function Canvas() {
     if (updatedPsdData) {
       setIsLayerSidebarVisible(true)
     }
+  }
+
+  // 批量缩放处理
+  const handleBatchResize = (layerIndices: number[]) => {
+    console.log('打开批量缩放对话框，选中的图层:', layerIndices)
+    setSelectedLayerIndices(layerIndices)
+    setShowResizeDialog(true)
   }
 
   // 如果有错误，显示错误信息
@@ -153,6 +165,18 @@ function Canvas() {
                   setIsLayerSidebarVisible(false)
                 }}
                 onUpdate={handlePSDUpdate}
+                onBatchResize={handleBatchResize}
+              />
+
+              {/* PSD智能缩放对话框 */}
+              <PSDResizeDialog
+                psdData={psdData}
+                isOpen={showResizeDialog}
+                onClose={() => {
+                  setShowResizeDialog(false)
+                  setSelectedLayerIndices([])
+                }}
+                selectedLayerIndices={selectedLayerIndices}
               />
             </div>
           </ResizablePanel>

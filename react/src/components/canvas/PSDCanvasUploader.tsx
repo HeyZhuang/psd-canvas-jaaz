@@ -185,52 +185,17 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
                 return
             }
 
-            // 更严格的重复图层检测
+            // 重复图层检测：只检查同一个PSD文件的同一个图层
             const currentElements = excalidrawAPI.getSceneElements()
 
-            // 检查多种重复情况
+            // 只检查同一PSD文件的同一图层索引（最精确的重复检测）
             const existingLayer = currentElements.find(element => {
-                // 1. 基于PSD文件ID和图层索引
-                if (element.customData?.psdFileId === psdFileId &&
-                    element.customData?.psdLayerIndex === layer.index) {
-                    return true
-                }
-
-                // 2. 基于图层名称和位置（防止同名图层重复）
-                if (element.customData?.layerName === layer.name &&
-                    Math.abs(element.x - (layer.left + offsetX)) < 5 &&
-                    Math.abs(element.y - (layer.top + offsetY)) < 5) {
-                    return true
-                }
-
-                // 3. 基于图层名称和尺寸（防止同名同尺寸图层重复）
-                if (element.customData?.layerName === layer.name &&
-                    Math.abs(element.width - layer.width) < 5 &&
-                    Math.abs(element.height - layer.height) < 5) {
-                    return true
-                }
-
-                // 4. 基于图层名称和PSD文件ID（防止同名图层在不同PSD中重复）
-                if (element.customData?.layerName === layer.name &&
-                    element.customData?.psdFileId === psdFileId) {
-                    return true
-                }
-
-                // 5. 基于图层名称（全局去重，防止任何同名图层）
-                if (element.customData?.layerName === layer.name) {
-                    console.log(`发现全局重复图层名称: ${layer.name}`)
-                    return true
-                }
-
-                return false
+                return element.customData?.psdFileId === psdFileId &&
+                    element.customData?.psdLayerIndex === layer.index
             })
 
             if (existingLayer) {
-                console.warn(`图层 "${layer.name}" (索引: ${layer.index}) 已存在，跳过添加`, {
-                    existingElement: existingLayer,
-                    newLayer: layer,
-                    duplicateReason: '多种重复检测'
-                })
+                console.warn(`图层 "${layer.name}" (PSD: ${psdFileId}, 索引: ${layer.index}) 已存在，跳过添加`)
                 return
             }
 
@@ -479,37 +444,22 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
                 })
             })
 
-            // 更严格的图层过滤条件：只包含有实际内容的图层
+            // 图层过滤条件：包含有实际内容的图层
             const imageLayers = psdData.layers.filter(layer => {
                 const hasImageUrl = !!layer.image_url
                 const hasValidSize = (layer.width && layer.width > 0) && (layer.height && layer.height > 0)
                 const isVisible = layer.visible !== false
-                const hasName = layer.name && layer.name.trim() !== ''
 
-                // 排除常见的背景图层名称
-                const backgroundNames = ['background', 'bg', '背景', '底图', '背景层']
-                const isBackgroundLayer = backgroundNames.some(bgName =>
-                    layer.name.toLowerCase().includes(bgName.toLowerCase())
-                )
+                // 基础条件：必须有image_url、有效尺寸且可见
+                const shouldInclude = hasImageUrl && hasValidSize && isVisible
 
-                // 排除纯色图层（通常是背景）
-                const isSolidColorLayer = layer.name.toLowerCase().includes('solid') ||
-                    layer.name.toLowerCase().includes('color') ||
-                    layer.name.toLowerCase().includes('纯色')
-
-                // 只包含有image_url且有有效尺寸的可见图层
-                const shouldInclude = hasImageUrl && hasValidSize && isVisible && hasName &&
-                    !isBackgroundLayer && !isSolidColorLayer
-
-                console.log(`圖層 "${layer.name}" 過濾結果:`, {
-                    hasImageUrl,
-                    hasValidSize,
-                    isVisible,
-                    hasName,
-                    isBackgroundLayer,
-                    isSolidColorLayer,
-                    shouldInclude
-                })
+                if (!shouldInclude) {
+                    console.log(`圖層 "${layer.name}" 被過濾:`, {
+                        hasImageUrl,
+                        hasValidSize,
+                        isVisible
+                    })
+                }
 
                 return shouldInclude
             })

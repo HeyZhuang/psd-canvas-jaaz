@@ -343,19 +343,10 @@ class GeminiPSDResizeService:
                     'rate limit' in error_str.lower()
                 )
                 
-                # 检查是否是服务过载错误
-                is_overload_error = (
-                    '503' in error_str or
-                    'UNAVAILABLE' in error_str or
-                    'overloaded' in error_str.lower() or
-                    'temporarily unavailable' in error_str.lower()
-                )
-                
-                if (is_quota_error or is_overload_error) and attempt < max_retries - 1:
+                if is_quota_error and attempt < max_retries - 1:
                     # 指数退避重试
                     wait_time = (2 ** attempt) * 5  # 5秒, 10秒, 20秒...
-                    error_type_msg = "服务过载" if is_overload_error else "配额限制"
-                    logger.warning(f"{error_type_msg}错误，{wait_time}秒后进行第{attempt + 2}次重试...")
+                    logger.warning(f"配额限制错误，{wait_time}秒后进行第{attempt + 2}次重试...")
                     await asyncio.sleep(wait_time)
                     continue
                 
@@ -372,18 +363,6 @@ class GeminiPSDResizeService:
                         f"1. 等待一段时间后重试\n"
                         f"2. 访问 https://ai.dev/usage?tab=rate-limit 查看配额使用情况\n"
                         f"3. 考虑升级到付费计划以获得更高配额\n"
-                        f"原始错误: {error_str}"
-                    )
-                
-                if is_overload_error:
-                    raise Exception(
-                        f"Gemini API 服务暂时过载。\n"
-                        f"这是Google服务端的暂时性问题。\n"
-                        f"解决方案：\n"
-                        f"1. 等待 1-2 分钟后重试（推荐）\n"
-                        f"2. 使用更快的模型 gemini-1.5-flash（可能效果稍差）\n"
-                        f"3. 避开使用高峰时段\n"
-                        f"4. 访问 https://status.cloud.google.com/ 查看服务状态\n"
                         f"原始错误: {error_str}"
                     )
                 
@@ -483,6 +462,113 @@ class GeminiPSDResizeService:
         except Exception as e:
             logger.error(f"PSD圖層縮放失敗: {e}")
             raise
+    
+    async def resize_selected_layers(self,
+                                   layers_info: List[Dict[str, Any]],
+                                   detection_image_path: str,
+                                   original_width: int,
+                                   original_height: int,
+                                   target_width: int,
+                                   target_height: int) -> List[Dict[str, Any]]:
+        """
+        对选中的图层进行智能缩放
+        
+        Args:
+            layers_info: 选中的图层信息列表
+            detection_image_path: 检测框图像路径
+            original_width: 原始宽度
+            original_height: 原始高度
+            target_width: 目标宽度
+            target_height: 目标高度
+        
+        Returns:
+            新的图层位置和尺寸列表
+        """
+        logger.info(f"开始调用Gemini API分析选中的 {len(layers_info)} 个图层")
+        
+        # 生成针对选中图层的提示词
+        prompt = self.generate_selected_layers_prompt(
+            layers_info=layers_info,
+            original_width=original_width,
+            original_height=original_height,
+            target_width=target_width,
+            target_height=target_height
+        )
+        
+        # 调用Gemini API
+        response_text = await self.call_gemini_api(
+            prompt=prompt,
+            image_path=detection_image_path
+        )
+        
+        # 解析结果
+        new_positions = self.parse_gemini_response(response_text)
+        
+        logger.info(f"成功获取 {len(new_positions)} 个图层的新位置")
+        return new_positions
+    
+    def generate_selected_layers_prompt(self,
+                                       layers_info: List[Dict[str, Any]],
+                                       original_width: int,
+                                       original_height: int,
+                                       target_width: int,
+                                       target_height: int) -> str:
+        """
+        生成针对选中图层的提示词
+        """
+        # 构建图层信息
+        layers_json = []
+        for i, layer in enumerate(layers_info):
+            layers_json.append({
+                "index": layer['index'],
+                "name": layer['name'],
+                "type": layer.get('type', 'layer'),
+                "bounds": layer['bounds'],
+                "width": layer['width'],
+                "height": layer['height']
+            })
+        
+        layers_str = json.dumps(layers_json, indent=2, ensure_ascii=False)
+        
+        prompt = f"""你是一个专业的PSD图层缩放专家。用户选中了 {len(layers_info)} 个图层进行智能缩放。
+
+**原始画布尺寸**: {original_width} x {original_height}
+**目标画布尺寸**: {target_width} x {target_height}
+
+**选中的图层信息**:
+```json
+{layers_str}
+```
+
+**任务要求**:
+1. **保持相对位置**: 选中图层之间的相对位置关系要保持一致
+2. **等比例缩放**: 每个图层按相同比例缩放，避免变形
+3. **边界限制**: 确保所有图层都在目标画布范围内
+4. **文字优先**: 文字图层优先保证可读性和完整性
+5. **美学平衡**: 整体布局保持美观和专业
+
+**请直接返回JSON格式的结果（不要使用markdown代码块）**:
+```json
+[
+  {{
+    "index": 0,
+    "name": "图层名称",
+    "x": 100,
+    "y": 100,
+    "width": 200,
+    "height": 150,
+    "reasoning": "缩放理由"
+  }}
+]
+```
+
+注意：
+- 返回的图层数量必须等于选中的图层数量
+- 每个图层的 index 必须与输入的 index 对应
+- 所有坐标和尺寸必须为整数
+- 确保 x, y, width, height 都在合理范围内"""
+
+        return prompt
 
 
 # 使用示例

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>魔法生成功能测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+        }
+
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+
+        .test-button:hover {
+            background: #45a049;
+        }
+
+        .test-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 10px;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+
+        .checklist li {
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-left: 3px solid #ccc;
+        }
+
+        .checklist li.pass {
+            border-left-color: #4CAF50;
+            background: #f1f8f4;
+        }
+
+        .checklist li.fail {
+            border-left-color: #f44336;
+            background: #fef1f0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔍 魔法生成功能完整测试</h1>
+
+        <div class="test-section">
+            <h2>1. 系统检查</h2>
+            <button class="test-button" onclick="checkSystem()">运行系统检查</button>
+            <div id="system-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. 后端API测试</h2>
+            <button class="test-button" onclick="testBackendAPI()">测试 /api/magic</button>
+            <button class="test-button" onclick="testCanvasAPI()">测试 /api/canvas/default</button>
+            <div id="backend-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. 前端环境检查</h2>
+            <button class="test-button" onclick="checkFrontend()">检查前端环境</button>
+            <div id="frontend-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. 模拟魔法生成事件</h2>
+            <button class="test-button" onclick="simulateMagicEvent()">发送测试事件</button>
+            <div id="event-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>5. 检查清单</h2>
+            <ul class="checklist" id="checklist">
+                <li>⏳ 后端服务器运行状态</li>
+                <li>⏳ 前端服务器运行状态</li>
+                <li>⏳ API连接测试</li>
+                <li>⏳ 选中元素数量 (需要 ≥2)</li>
+                <li>⏳ 登录状态</li>
+                <li>⏳ EventBus可用性</li>
+                <li>⏳ excalidrawAPI初始化</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>6. 使用说明</h2>
+            <div class="info result">
+                <strong>如何使用魔法生成功能:</strong>
+
+                1. 在画布上选中至少2个元素（可以是任何类型：文本、形状、图片等）
+                2. 确保已登录
+                3. 点击弹出的"魔法生成"按钮，或按快捷键 Ctrl+B (Windows) / ⌘+B (Mac)
+                4. 等待AI分析和生成结果
+
+                <strong>如果没有反应:</strong>
+
+                1. 检查是否选中了至少2个元素
+                2. 确认"魔法生成"按钮是否显示
+                3. 打开浏览器开发者工具 (F12) 查看Console是否有错误
+                4. 查看Network标签是否有 /api/magic 请求
+                5. 运行本页面的测试工具进行诊断
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function checkSystem() {
+            const result = document.getElementById('system-result');
+            result.innerHTML = '<div class="info result">正在检查系统...</div>';
+
+            const checks = [];
+
+            // 检查后端
+            try {
+                const backendRes = await fetch('/api/canvas/list');
+                checks.push({
+                    name: '后端服务器',
+                    status: backendRes.ok,
+                    message: backendRes.ok ? '✅ 正常运行' : `❌ 错误: ${backendRes.status}`
+                });
+            } catch (e) {
+                checks.push({
+                    name: '后端服务器',
+                    status: false,
+                    message: `❌ 无法连接: ${e.message}`
+                });
+            }
+
+            // 检查EventBus
+            checks.push({
+                name: 'EventBus',
+                status: !!window.eventBus,
+                message: window.eventBus ? '✅ 已加载' : '❌ 未找到'
+            });
+
+            // 显示结果
+            let html = '<ul class="checklist">';
+            checks.forEach(check => {
+                html += `<li class="${check.status ? 'pass' : 'fail'}">${check.name}: ${check.message}</li>`;
+            });
+            html += '</ul>';
+            result.innerHTML = html;
+
+            updateChecklist();
+        }
+
+        async function testBackendAPI() {
+            const result = document.getElementById('backend-result');
+            result.innerHTML = '<div class="info result">正在测试后端API...</div>';
+
+            try {
+                const response = await fetch('/api/magic', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messages: [{
+                            role: 'user',
+                            content: [{ type: 'text', text: 'test' }]
+                        }],
+                        session_id: 'test-' + Date.now(),
+                        canvas_id: 'test',
+                        system_prompt: 'test'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    result.innerHTML = `<div class="success result">✅ API测试成功!\n状态码: ${response.status}\n响应: ${JSON.stringify(data, null, 2)}</div>`;
+                } else {
+                    result.innerHTML = `<div class="error result">❌ API错误\n状态码: ${response.status}\n响应: ${JSON.stringify(data, null, 2)}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error result">❌ 请求失败:\n${error.message}\n\n请确认:\n1. 后端服务器是否运行\n2. 端口配置是否正确</div>`;
+            }
+        }
+
+        async function testCanvasAPI() {
+            const result = document.getElementById('backend-result');
+            result.innerHTML = '<div class="info result">正在测试Canvas API...</div>';
+
+            try {
+                const response = await fetch('/api/canvas/default');
+                const data = await response.json();
+
+                if (response.ok) {
+                    result.innerHTML = `<div class="success result">✅ Canvas API正常!\n状态码: ${response.status}\n画布名称: ${data.name}\n会话数: ${data.sessions?.length || 0}</div>`;
+                } else {
+                    result.innerHTML = `<div class="error result">❌ Canvas API错误\n状态码: ${response.status}\n响应: ${JSON.stringify(data, null, 2)}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error result">❌ 请求失败:\n${error.message}</div>`;
+            }
+        }
+
+        function checkFrontend() {
+            const result = document.getElementById('frontend-result');
+
+            const checks = [];
+
+            // 检查EventBus
+            checks.push({
+                name: 'EventBus',
+                status: !!window.eventBus,
+                details: window.eventBus ? '已加载' : '未找到 - 可能页面未完全加载'
+            });
+
+            // 检查localStorage
+            checks.push({
+                name: 'LocalStorage',
+                status: !!window.localStorage,
+                details: window.localStorage ? '可用' : '不可用'
+            });
+
+            // 检查是否在正确的页面
+            const isCanvasPage = window.location.pathname.includes('/canvas/');
+            checks.push({
+                name: '当前页面',
+                status: isCanvasPage,
+                details: isCanvasPage ? `画布页面: ${window.location.pathname}` : '非画布页面 - 请在画布页面测试'
+            });
+
+            let html = '<ul class="checklist">';
+            checks.forEach(check => {
+                html += `<li class="${check.status ? 'pass' : 'fail'}">${check.name}: ${check.details}</li>`;
+            });
+            html += '</ul>';
+            result.innerHTML = html;
+        }
+
+        function simulateMagicEvent() {
+            const result = document.getElementById('event-result');
+
+            if (!window.eventBus) {
+                result.innerHTML = '<div class="error result">❌ EventBus未找到!\n\n请在画布页面 (http://localhost:3000/canvas/default) 打开此测试页面。</div>';
+                return;
+            }
+
+            const testEvent = {
+                fileId: 'test-' + Date.now(),
+                base64: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+                width: 100,
+                height: 100,
+                timestamp: new Date().toISOString()
+            };
+
+            console.log('📤 发送测试事件:', testEvent);
+
+            try {
+                window.eventBus.emit('Canvas::MagicGenerate', testEvent);
+                result.innerHTML = `<div class="success result">✅ 事件已发送!\n\n请检查:\n1. 聊天界面是否收到消息\n2. 浏览器控制台是否有"魔法生成消息已发送到后台"\n3. Network标签是否有 /api/magic 请求\n\n事件数据:\n${JSON.stringify(testEvent, null, 2)}</div>`;
+            } catch (error) {
+                result.innerHTML = `<div class="error result">❌ 发送事件失败:\n${error.message}\n\n${error.stack}</div>`;
+            }
+        }
+
+        function updateChecklist() {
+            // 这个函数可以在实际应用中更新检查清单状态
+            console.log('Checklist updated');
+        }
+
+        // 页面加载时自动运行系统检查
+        window.addEventListener('load', () => {
+            setTimeout(checkSystem, 500);
+        });
+    </script>
+</body>
+
+</html>

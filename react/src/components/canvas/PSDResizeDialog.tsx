@@ -5,21 +5,27 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, Download, Eye, Settings, AlertCircle } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Loader2, Download, Eye, Settings, AlertCircle, Sparkles, FileDown } from 'lucide-react'
 import { PSDUploadResponse } from '@/api/upload'
 import { useCanvas } from '@/contexts/canvas'
 import { toast } from 'sonner'
 import { collectCanvasImageData, validateCanvasData } from '@/utils/canvasToPSD'
+import { PSDResizePreview } from './PSDResizePreview'
+import { PSDFilePreview } from './PSDFilePreview'
+import { ExportDialog } from './ExportDialog'
 
 interface PSDResizeDialogProps {
     psdData: PSDUploadResponse | null
     isOpen: boolean
     onClose: () => void
+    selectedLayerIndices?: number[] // 新增：选中的图层索引
 }
 
-export function PSDResizeDialog({ psdData, isOpen, onClose }: PSDResizeDialogProps) {
+export function PSDResizeDialog({ psdData, isOpen, onClose, selectedLayerIndices }: PSDResizeDialogProps) {
     const { excalidrawAPI } = useCanvas()
-    const [resizeMode, setResizeMode] = useState<'psd' | 'canvas'>('psd') // 新增：缩放模式
+    const [resizeMode, setResizeMode] = useState<'psd' | 'canvas' | 'selected'>('psd') // 修改：添加 'selected' 模式
     const [outputFormat, setOutputFormat] = useState<'png' | 'psd'>('png') // 新增：输出格式
     const [layeredMode, setLayeredMode] = useState<boolean>(false) // 新增：分层模式
     const [targetWidth, setTargetWidth] = useState<number>(800)
@@ -30,6 +36,31 @@ export function PSDResizeDialog({ psdData, isOpen, onClose }: PSDResizeDialogPro
     const [currentStep, setCurrentStep] = useState<string>('')
     const [result, setResult] = useState<any>(null)
     const [error, setError] = useState<string>('')
+
+    // 新增：预览和导出状态
+    const [showPreview, setShowPreview] = useState<boolean>(false)
+    const [showPSDPreview, setShowPSDPreview] = useState<boolean>(false)
+    const [showExport, setShowExport] = useState<boolean>(false)
+
+    // 自动切换到选中图层模式
+    React.useEffect(() => {
+        if (selectedLayerIndices && selectedLayerIndices.length > 0) {
+            console.log('选中图层模式激活，图层数量:', selectedLayerIndices.length)
+            setResizeMode('selected')
+        }
+    }, [selectedLayerIndices])
+
+    // 调试：监控关键状态
+    React.useEffect(() => {
+        console.log('PSDResizeDialog 状态:', {
+            isOpen,
+            resizeMode,
+            selectedLayerIndices,
+            hasResult: !!result,
+            showPreview,
+            showExport
+        })
+    }, [isOpen, resizeMode, selectedLayerIndices, result, showPreview, showExport])
 
     // 添加缩放后的图片到画布
     const addResizedImageToCanvas = useCallback(async (imageUrl: string, width: number, height: number) => {
@@ -260,6 +291,101 @@ export function PSDResizeDialog({ psdData, isOpen, onClose }: PSDResizeDialogPro
         }
     }, [excalidrawAPI])
 
+    // 缩放选中的图层
+    const handleSelectedLayersResize = useCallback(async () => {
+        if (!psdData || !selectedLayerIndices || selectedLayerIndices.length === 0) {
+            setError('没有选中任何图层')
+            return
+        }
+
+        setIsProcessing(true)
+        setProgress(0)
+        setCurrentStep('正在准备选中图层的缩放请求...')
+        setError('')
+        setResult(null)
+
+        try {
+            setProgress(10)
+
+            // 获取选中的图层信息
+            const selectedLayers = psdData.layers.filter(
+                layer => selectedLayerIndices.includes(layer.index)
+            )
+
+            console.log('选中的图层:', selectedLayers)
+
+            setProgress(20)
+            setCurrentStep(`正在调用 Gemini API 分析 ${selectedLayers.length} 个图层...`)
+
+            const formData = new FormData()
+            formData.append('file_id', psdData.file_id)
+            formData.append('target_width', targetWidth.toString())
+            formData.append('target_height', targetHeight.toString())
+            formData.append('layer_indices', JSON.stringify(selectedLayerIndices))
+            if (apiKey) {
+                formData.append('api_key', apiKey)
+            }
+
+            setProgress(40)
+            setCurrentStep('正在处理选中图层缩放...')
+
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 600000) // 10分钟超时
+
+            try {
+                const response = await fetch('/api/psd/resize/resize-selected-layers', {
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal,
+                })
+
+                clearTimeout(timeoutId)
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => null)
+                    throw new Error(errorData?.detail || `API 错误: ${response.status}`)
+                }
+
+                const result = await response.json()
+
+                setProgress(90)
+                setCurrentStep('正在添加缩放后的图层到画布...')
+
+                // 添加缩放后的图层到画布
+                if (result.layers && result.layers.length > 0) {
+                    for (const layer of result.layers) {
+                        await addResizedImageToCanvas(
+                            layer.image_url,
+                            layer.width,
+                            layer.height
+                        )
+                    }
+                }
+
+                setProgress(100)
+                setCurrentStep(`成功缩放 ${result.layers.length} 个图层！`)
+                setResult(result)
+
+                toast.success(`成功缩放 ${selectedLayers.length} 个图层`)
+
+            } catch (fetchError: any) {
+                if (fetchError.name === 'AbortError') {
+                    throw new Error('请求超时（10分钟），请稍后重试')
+                }
+                throw fetchError
+            } finally {
+                clearTimeout(timeoutId)
+            }
+
+        } catch (error: any) {
+            console.error('选中图层缩放失败:', error)
+            setError(error.message || '未知错误')
+            toast.error('缩放失败: ' + (error.message || '未知错误'))
+        } finally {
+            setIsProcessing(false)
+        }
+    }, [psdData, selectedLayerIndices, targetWidth, targetHeight, apiKey, addResizedImageToCanvas])
+
     // 缩放整个画布
     const handleCanvasResize = async () => {
         if (!excalidrawAPI) {
@@ -287,15 +413,12 @@ export function PSDResizeDialog({ psdData, isOpen, onClose }: PSDResizeDialogPro
             setCurrentStep('正在创建临时PSD...')
 
             // 2. 发送画布数据到后端创建PSD并缩放
-            const formData = new FormData()
-            formData.append('canvas_data', JSON.stringify(canvasData))
-            formData.append('target_width', targetWidth.toString())
-            formData.append('target_height', targetHeight.toString())
-            if (!layeredMode) {
-                formData.append('output_format', outputFormat)
-            }
-            if (apiKey) {
-                formData.append('api_key', apiKey)
+            const requestBody = {
+                canvas_data: canvasData,
+                target_width: targetWidth,
+                target_height: targetHeight,
+                ...(!layeredMode && { output_format: outputFormat }),
+                ...(apiKey && { api_key: apiKey })
             }
 
             setProgress(30)
@@ -319,7 +442,10 @@ export function PSDResizeDialog({ psdData, isOpen, onClose }: PSDResizeDialogPro
 
                 const resizeResponse = await fetch(apiEndpoint, {
                     method: 'POST',
-                    body: formData,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody),
                     signal: controller.signal,
                 })
 
@@ -507,310 +633,465 @@ export function PSDResizeDialog({ psdData, isOpen, onClose }: PSDResizeDialogPro
         }
     }
 
-    // 如果对话框未打开，不渲染任何内容
-    if (!isOpen) return null
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-background rounded-lg shadow-lg max-w-2xl max-h-[80vh] overflow-auto">
-                <div className="p-4 border-b flex justify-between items-center">
-                    <h2 className="text-lg font-semibold">PSD智能縮放工具</h2>
-                    <Button variant="ghost" size="sm" onClick={onClose}>
-                        ×
-                    </Button>
-                </div>
+        <>
+            <Dialog open={isOpen} onOpenChange={onClose}>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>PSD智能縮放工具</DialogTitle>
+                    </DialogHeader>
 
-                <div className="p-6 space-y-6">
-                    {/* 缩放模式选择 */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">缩放模式</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex gap-2">
-                                <Button
-                                    variant={resizeMode === 'psd' ? 'default' : 'outline'}
-                                    onClick={() => setResizeMode('psd')}
-                                    disabled={isProcessing}
-                                    className="flex-1"
-                                >
-                                    缩放单个PSD文件
-                                    {psdData && <span className="text-xs ml-2">({psdData.layers?.length || 0}层)</span>}
-                                </Button>
-                                <Button
-                                    variant={resizeMode === 'canvas' ? 'default' : 'outline'}
-                                    onClick={() => setResizeMode('canvas')}
-                                    disabled={isProcessing}
-                                    className="flex-1"
-                                >
-                                    缩放整个画布
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* PSD文件信息 - 仅在PSD模式下显示 */}
-                    {resizeMode === 'psd' && psdData && (
+                    <div className="space-y-6">
+                        {/* 缩放模式选择 */}
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-base">當前PSD文件</CardTitle>
+                                <CardTitle className="text-base">缩放模式</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="space-y-3">
-                                    <div className="space-y-2">
-                                        <div className="text-sm">
-                                            <strong>文件ID:</strong> {psdData.file_id}
-                                        </div>
-                                        <div className="text-sm">
-                                            <strong>原始尺寸:</strong> {psdData.width} × {psdData.height}
-                                        </div>
-                                        <div className="text-sm">
-                                            <strong>圖層數量:</strong> {psdData.layers?.length || 0}
-                                        </div>
-                                    </div>
-
-                                    {/* 输出模式选择 */}
-                                    <div className="space-y-2 pt-2 border-t">
-                                        <Label className="text-sm font-medium">输出模式</Label>
-                                        <div className="flex gap-2">
-                                            <Button
-                                                size="sm"
-                                                variant={!layeredMode ? 'default' : 'outline'}
-                                                onClick={() => setLayeredMode(false)}
-                                                disabled={isProcessing}
-                                            >
-                                                合成模式
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant={layeredMode ? 'default' : 'outline'}
-                                                onClick={() => setLayeredMode(true)}
-                                                disabled={isProcessing}
-                                            >
-                                                分层模式 ✨
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    <div className="text-xs text-muted-foreground mt-2">
-                                        💡 提示：
-                                        {layeredMode ? (
-                                            <span className="text-green-600 font-medium">
-                                                {' '}分层模式会在画布上生成 {psdData.layers?.length || 0} 个可独立移动的图层
-                                            </span>
-                                        ) :
-                                            ' 合成模式会将所有图层合成为一张图片'}
-                                    </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant={resizeMode === 'psd' ? 'default' : 'outline'}
+                                        onClick={() => setResizeMode('psd')}
+                                        disabled={isProcessing || (selectedLayerIndices && selectedLayerIndices.length > 0)}
+                                        className="flex-1"
+                                    >
+                                        缩放单个PSD文件
+                                        {psdData && <span className="text-xs ml-2">({psdData.layers?.length || 0}层)</span>}
+                                    </Button>
+                                    <Button
+                                        variant={resizeMode === 'canvas' ? 'default' : 'outline'}
+                                        onClick={() => setResizeMode('canvas')}
+                                        disabled={isProcessing}
+                                        className="flex-1"
+                                    >
+                                        缩放整个画布
+                                    </Button>
+                                    {selectedLayerIndices && selectedLayerIndices.length > 0 && (
+                                        <Button
+                                            variant={resizeMode === 'selected' ? 'default' : 'outline'}
+                                            onClick={() => setResizeMode('selected')}
+                                            disabled={isProcessing}
+                                            className="flex-1"
+                                        >
+                                            <Sparkles className="w-4 h-4 mr-1" />
+                                            缩放选中图层 ({selectedLayerIndices.length})
+                                        </Button>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
-                    )}
 
-                    {/* 画布信息 - 仅在画布模式下显示 */}
-                    {resizeMode === 'canvas' && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">画布信息</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-3">
-                                    <div className="text-sm text-muted-foreground">
-                                        将缩放画布上的所有图片元素
-                                    </div>
-
-                                    {/* 输出模式选择 */}
-                                    <div className="space-y-2">
-                                        <Label className="text-sm font-medium">输出模式</Label>
-                                        <div className="flex gap-2">
-                                            <Button
-                                                size="sm"
-                                                variant={!layeredMode ? 'default' : 'outline'}
-                                                onClick={() => setLayeredMode(false)}
-                                                disabled={isProcessing}
-                                            >
-                                                合成模式
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant={layeredMode ? 'default' : 'outline'}
-                                                onClick={() => setLayeredMode(true)}
-                                                disabled={isProcessing}
-                                            >
-                                                分层模式 ✨
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    {/* 输出格式选择 - 仅合成模式显示 */}
-                                    {!layeredMode && (
+                        {/* PSD文件信息 - 仅在PSD模式下显示 */}
+                        {resizeMode === 'psd' && psdData && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">當前PSD文件</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
                                         <div className="space-y-2">
-                                            <Label className="text-sm font-medium">输出格式</Label>
+                                            <div className="text-sm">
+                                                <strong>文件ID:</strong> {psdData.file_id}
+                                            </div>
+                                            <div className="text-sm">
+                                                <strong>原始尺寸:</strong> {psdData.width} × {psdData.height}
+                                            </div>
+                                            <div className="text-sm">
+                                                <strong>圖層數量:</strong> {psdData.layers?.length || 0}
+                                            </div>
+                                        </div>
+
+                                        {/* 输出模式选择 */}
+                                        <div className="space-y-2 pt-2 border-t">
+                                            <Label className="text-sm font-medium">输出模式</Label>
                                             <div className="flex gap-2">
                                                 <Button
                                                     size="sm"
-                                                    variant={outputFormat === 'png' ? 'default' : 'outline'}
-                                                    onClick={() => setOutputFormat('png')}
+                                                    variant={!layeredMode ? 'default' : 'outline'}
+                                                    onClick={() => setLayeredMode(false)}
                                                     disabled={isProcessing}
                                                 >
-                                                    PNG（图片）
+                                                    合成模式
                                                 </Button>
                                                 <Button
                                                     size="sm"
-                                                    variant={outputFormat === 'psd' ? 'default' : 'outline'}
-                                                    onClick={() => setOutputFormat('psd')}
+                                                    variant={layeredMode ? 'default' : 'outline'}
+                                                    onClick={() => setLayeredMode(true)}
                                                     disabled={isProcessing}
                                                 >
-                                                    PSD（分层）
+                                                    分层模式 ✨
                                                 </Button>
                                             </div>
                                         </div>
-                                    )}
 
-                                    <div className="text-xs text-muted-foreground mt-2">
-                                        💡 提示：
-                                        {layeredMode ? (
-                                            <span className="text-green-600 font-medium">
-                                                {' '}分层模式会在画布上生成多个可独立移动的图层，每个图层保存为PNG文件，元数据以JSON格式存储
-                                            </span>
-                                        ) : outputFormat === 'png' ?
-                                            ' PNG模式会将所有图层合成为一张图片' :
-                                            ' PSD模式会保留图层结构（实验性功能）'}
+                                        <div className="text-xs text-muted-foreground mt-2">
+                                            💡 提示：
+                                            {layeredMode ? (
+                                                <span className="text-green-600 font-medium">
+                                                    {' '}分层模式会在画布上生成 {psdData.layers?.length || 0} 个可独立移动的图层
+                                                </span>
+                                            ) :
+                                                ' 合成模式会将所有图层合成为一张图片'}
+                                        </div>
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
+                                </CardContent>
+                            </Card>
+                        )}
 
-                    {/* 目標尺寸設置 */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">目標尺寸設置</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="target-width">目標寬度</Label>
-                                    <Input
-                                        id="target-width"
-                                        type="number"
-                                        value={targetWidth}
-                                        onChange={(e) => setTargetWidth(Number(e.target.value))}
-                                        disabled={isProcessing}
-                                        min="1"
-                                        max="4000"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="target-height">目標高度</Label>
-                                    <Input
-                                        id="target-height"
-                                        type="number"
-                                        value={targetHeight}
-                                        onChange={(e) => setTargetHeight(Number(e.target.value))}
-                                        disabled={isProcessing}
-                                        min="1"
-                                        max="4000"
-                                    />
-                                </div>
-                            </div>
+                        {/* 选中图层信息 - 仅在选中模式下显示 */}
+                        {resizeMode === 'selected' && selectedLayerIndices && selectedLayerIndices.length > 0 && psdData && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">选中的图层</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
+                                        <div className="text-sm text-muted-foreground">
+                                            将缩放以下选中的 {selectedLayerIndices.length} 个图层
+                                        </div>
+                                        <div className="max-h-32 overflow-y-auto space-y-1">
+                                            {psdData.layers
+                                                .filter(layer => selectedLayerIndices.includes(layer.index))
+                                                .map(layer => (
+                                                    <div key={layer.index} className="flex items-center gap-2 p-1 text-xs bg-muted/50 rounded">
+                                                        <Badge variant="secondary" className="text-xs">
+                                                            {layer.type === 'text' ? '文字' : layer.type === 'group' ? '群组' : '图层'}
+                                                        </Badge>
+                                                        <span>{layer.name}</span>
+                                                    </div>
+                                                ))
+                                            }
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
 
-                            {/* API密鑰設置 */}
-                            <div className="space-y-2">
-                                <Label htmlFor="api-key">Gemini API密鑰 (可選)</Label>
-                                <Input
-                                    id="api-key"
-                                    type="password"
-                                    value={apiKey}
-                                    onChange={(e) => setApiKey(e.target.value)}
-                                    disabled={isProcessing}
-                                    placeholder="如果不提供，將使用環境變量中的密鑰"
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
+                        {/* 画布信息 - 仅在画布模式下显示 */}
+                        {resizeMode === 'canvas' && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">画布信息</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
+                                        <div className="text-sm text-muted-foreground">
+                                            将缩放画布上的所有图片元素
+                                        </div>
 
-                    {/* 錯誤提示 */}
-                    {error && (
-                        <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    )}
+                                        {/* 输出模式选择 */}
+                                        <div className="space-y-2">
+                                            <Label className="text-sm font-medium">输出模式</Label>
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    variant={!layeredMode ? 'default' : 'outline'}
+                                                    onClick={() => setLayeredMode(false)}
+                                                    disabled={isProcessing}
+                                                >
+                                                    合成模式
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant={layeredMode ? 'default' : 'outline'}
+                                                    onClick={() => setLayeredMode(true)}
+                                                    disabled={isProcessing}
+                                                >
+                                                    分层模式 ✨
+                                                </Button>
+                                            </div>
+                                        </div>
 
-                    {/* 進度條 */}
-                    {isProcessing && (
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                                <span>{currentStep}</span>
-                                <span>{progress}%</span>
-                            </div>
-                            <Progress value={progress} className="w-full" />
-                        </div>
-                    )}
+                                        {/* 输出格式选择 - 仅合成模式显示 */}
+                                        {!layeredMode && (
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-medium">输出格式</Label>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant={outputFormat === 'png' ? 'default' : 'outline'}
+                                                        onClick={() => setOutputFormat('png')}
+                                                        disabled={isProcessing}
+                                                    >
+                                                        PNG（图片）
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant={outputFormat === 'psd' ? 'default' : 'outline'}
+                                                        onClick={() => setOutputFormat('psd')}
+                                                        disabled={isProcessing}
+                                                    >
+                                                        PSD（分层）
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )}
 
-                    {/* 操作按鈕 */}
-                    <div className="flex gap-2">
-                        <Button
-                            onClick={resizeMode === 'canvas' ? handleCanvasResize : handleResize}
-                            disabled={resizeMode === 'psd' && !psdData || isProcessing}
-                        >
-                            {isProcessing ? (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                                <Settings className="h-4 w-4 mr-2" />
-                            )}
-                            {resizeMode === 'canvas' ? '縮放整個畫布' : '開始智能縮放'}
-                        </Button>
-                    </div>
+                                        <div className="text-xs text-muted-foreground mt-2">
+                                            💡 提示：
+                                            {layeredMode ? (
+                                                <span className="text-green-600 font-medium">
+                                                    {' '}分层模式会在画布上生成多个可独立移动的图层，每个图层保存为PNG文件，元数据以JSON格式存储
+                                                </span>
+                                            ) : outputFormat === 'png' ?
+                                                ' PNG模式会将所有图层合成为一张图片' :
+                                                ' PSD模式会保留图层结构（实验性功能）'}
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
 
-                    {/* 縮放結果 */}
-                    {result && (
+                        {/* 目標尺寸設置 */}
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-base">縮放完成</CardTitle>
+                                <CardTitle className="text-base">目標尺寸設置</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <Label>原始尺寸</Label>
-                                        <div className="text-lg font-semibold">
-                                            {result.original_size.width} × {result.original_size.height}
-                                        </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="target-width">目標寬度</Label>
+                                        <Input
+                                            id="target-width"
+                                            type="number"
+                                            value={targetWidth}
+                                            onChange={(e) => setTargetWidth(Number(e.target.value))}
+                                            disabled={isProcessing}
+                                            min="1"
+                                            max="4000"
+                                        />
                                     </div>
-                                    <div>
-                                        <Label>目標尺寸</Label>
-                                        <div className="text-lg font-semibold">
-                                            {result.target_size.width} × {result.target_size.height}
-                                        </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="target-height">目標高度</Label>
+                                        <Input
+                                            id="target-height"
+                                            type="number"
+                                            value={targetHeight}
+                                            onChange={(e) => setTargetHeight(Number(e.target.value))}
+                                            disabled={isProcessing}
+                                            min="1"
+                                            max="4000"
+                                        />
                                     </div>
                                 </div>
 
-                                <div className="flex gap-2">
-                                    <Button onClick={downloadResult}>
-                                        <Download className="h-4 w-4 mr-2" />
-                                        下載縮放結果
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => {
-                                            if (result?.output_url) {
-                                                addResizedImageToCanvas(
-                                                    result.output_url,
-                                                    result.target_size.width,
-                                                    result.target_size.height
-                                                )
-                                            }
-                                        }}
-                                    >
-                                        <Eye className="h-4 w-4 mr-2" />
-                                        添加到画布
-                                    </Button>
+                                {/* API密鑰設置 */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="api-key">Gemini API密鑰 (可選)</Label>
+                                    <Input
+                                        id="api-key"
+                                        type="password"
+                                        value={apiKey}
+                                        onChange={(e) => setApiKey(e.target.value)}
+                                        disabled={isProcessing}
+                                        placeholder="如果不提供，將使用環境變量中的密鑰"
+                                    />
                                 </div>
                             </CardContent>
                         </Card>
-                    )}
-                </div>
-            </div>
-        </div>
+
+                        {/* 錯誤提示 */}
+                        {error && (
+                            <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription>{error}</AlertDescription>
+                            </Alert>
+                        )}
+
+                        {/* 進度條 */}
+                        {isProcessing && (
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span>{currentStep}</span>
+                                    <span>{progress}%</span>
+                                </div>
+                                <Progress value={progress} className="w-full" />
+                            </div>
+                        )}
+
+                        {/* 操作按鈕 */}
+                        <div className="flex gap-2 flex-wrap">
+                            {/* 预览按钮 - 在选中图层模式显示 */}
+                            {resizeMode === 'selected' && selectedLayerIndices && selectedLayerIndices.length > 0 && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        console.log('点击预览按钮')
+                                        setShowPreview(true)
+                                    }}
+                                    disabled={isProcessing}
+                                >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    预览效果
+                                </Button>
+                            )}
+
+                            {/* 预览按钮 - 在PSD模式显示 */}
+                            {resizeMode === 'psd' && psdData && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        console.log('点击PSD预览按钮')
+                                        setShowPSDPreview(true)
+                                    }}
+                                    disabled={isProcessing}
+                                >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    预览效果
+                                </Button>
+                            )}
+
+                            {/* 预览按钮 - 在画布模式显示（未来实现） */}
+                            {resizeMode === 'canvas' && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        toast.info('画布预览功能即将推出！')
+                                    }}
+                                    disabled={isProcessing}
+                                >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    预览效果（即将推出）
+                                </Button>
+                            )}
+
+                            <Button
+                                onClick={() => {
+                                    if (resizeMode === 'canvas') {
+                                        handleCanvasResize()
+                                    } else if (resizeMode === 'selected') {
+                                        handleSelectedLayersResize()
+                                    } else {
+                                        handleResize()
+                                    }
+                                }}
+                                disabled={(resizeMode === 'psd' && !psdData) || (resizeMode === 'selected' && (!selectedLayerIndices || selectedLayerIndices.length === 0)) || isProcessing}
+                            >
+                                {isProcessing ? (
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                    <Settings className="h-4 w-4 mr-2" />
+                                )}
+                                {resizeMode === 'canvas' ? '縮放整個畫布' : resizeMode === 'selected' ? '縮放選中圖層' : '開始智能縮放'}
+                            </Button>
+
+                            {/* 导出按钮 - 在有结果时显示 */}
+                            {result && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        console.log('点击导出按钮')
+                                        setShowExport(true)
+                                    }}
+                                >
+                                    <FileDown className="h-4 w-4 mr-2" />
+                                    导出
+                                </Button>
+                            )}
+                        </div>
+
+                        {/* 縮放結果 */}
+                        {result && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">縮放完成</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <Label>原始尺寸</Label>
+                                            <div className="text-lg font-semibold">
+                                                {result.original_size.width} × {result.original_size.height}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <Label>目標尺寸</Label>
+                                            <div className="text-lg font-semibold">
+                                                {result.target_size.width} × {result.target_size.height}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <Button onClick={downloadResult}>
+                                            <Download className="h-4 w-4 mr-2" />
+                                            下載縮放結果
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => {
+                                                if (result?.output_url) {
+                                                    addResizedImageToCanvas(
+                                                        result.output_url,
+                                                        result.target_size.width,
+                                                        result.target_size.height
+                                                    )
+                                                }
+                                            }}
+                                        >
+                                            <Eye className="h-4 w-4 mr-2" />
+                                            添加到画布
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* 选中图层预览对话框 */}
+            {showPreview && psdData && selectedLayerIndices && selectedLayerIndices.length > 0 && (
+                <PSDResizePreview
+                    psdData={psdData}
+                    selectedLayerIndices={selectedLayerIndices}
+                    targetWidth={targetWidth}
+                    targetHeight={targetHeight}
+                    apiKey={apiKey}
+                    onConfirm={(adjustedLayers) => {
+                        setShowPreview(false)
+                        // 如果用户调整了图层，使用调整后的位置
+                        if (adjustedLayers) {
+                            console.log('应用调整后的图层:', adjustedLayers)
+                            // TODO: 传递调整后的图层数据到缩放函数
+                        }
+                        // 执行缩放
+                        handleSelectedLayersResize()
+                    }}
+                    onCancel={() => setShowPreview(false)}
+                />
+            )}
+
+            {/* PSD文件预览对话框 */}
+            {showPSDPreview && psdData && (
+                <PSDFilePreview
+                    psdData={psdData}
+                    targetWidth={targetWidth}
+                    targetHeight={targetHeight}
+                    apiKey={apiKey}
+                    onConfirm={(adjustedLayers) => {
+                        setShowPSDPreview(false)
+                        // 如果用户调整了图层，使用调整后的位置
+                        if (adjustedLayers) {
+                            console.log('应用调整后的PSD图层:', adjustedLayers)
+                            // TODO: 传递调整后的图层数据到缩放函数
+                        }
+                        // 执行缩放
+                        handleResize()
+                    }}
+                    onCancel={() => setShowPSDPreview(false)}
+                />
+            )}
+
+            {/* 导出对话框 */}
+            {showExport && result && psdData && (
+                <ExportDialog
+                    isOpen={showExport}
+                    onClose={() => setShowExport(false)}
+                    resizeResult={result}
+                    psdData={psdData}
+                />
+            )}
+        </>
     )
 }

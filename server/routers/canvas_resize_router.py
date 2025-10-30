@@ -8,9 +8,10 @@ import os
 import json
 import tempfile
 from typing import Dict, Any, Optional
-from fastapi import APIRouter, HTTPException, Form
+from fastapi import APIRouter, HTTPException, Form, Body
 from fastapi.responses import FileResponse
 import logging
+from pydantic import BaseModel
 
 from services.gemini_psd_resize_service import GeminiPSDResizeService
 from utils.psd_layer_info import get_psd_layers_info, draw_detection_boxes
@@ -27,14 +28,17 @@ PSD_DIR = os.path.join(FILES_DIR, "psd")
 os.makedirs(PSD_DIR, exist_ok=True)
 
 
+# 请求模型
+class CanvasResizeRequest(BaseModel):
+    canvas_data: dict  # 直接接收字典而不是字符串
+    target_width: int
+    target_height: int
+    api_key: Optional[str] = None
+    output_format: str = "png"
+
+
 @router.post("/resize")
-async def resize_canvas(
-    canvas_data: str = Form(...),
-    target_width: int = Form(...),
-    target_height: int = Form(...),
-    api_key: Optional[str] = Form(None),
-    output_format: str = Form("png")  # "png" 或 "psd"
-):
+async def resize_canvas(request: CanvasResizeRequest = Body(...)):
     """
     智能缩放整个画布
     
@@ -59,7 +63,11 @@ async def resize_canvas(
     try:
         # 1. 解析画布数据
         logger.info("开始处理画布缩放请求")
-        canvas_dict = json.loads(canvas_data)
+        canvas_dict = request.canvas_data
+        target_width = request.target_width
+        target_height = request.target_height
+        api_key = request.api_key
+        output_format = request.output_format
         
         original_width = canvas_dict['width']
         original_height = canvas_dict['height']
@@ -245,13 +253,15 @@ async def resize_canvas(
                 logger.warning(f"清理临时文件失败: {e}")
 
 
+class CanvasResizeLayeredRequest(BaseModel):
+    canvas_data: dict
+    target_width: int
+    target_height: int
+    api_key: Optional[str] = None
+
+
 @router.post("/resize-layered")
-async def resize_canvas_layered(
-    canvas_data: str = Form(...),
-    target_width: int = Form(...),
-    target_height: int = Form(...),
-    api_key: Optional[str] = Form(None)
-):
+async def resize_canvas_layered(request: CanvasResizeLayeredRequest = Body(...)):
     """
     智能缩放整个画布并返回分层结果
     
@@ -274,7 +284,10 @@ async def resize_canvas_layered(
     try:
         # 1. 解析画布数据
         logger.info("开始处理画布分层缩放请求")
-        canvas_dict = json.loads(canvas_data)
+        canvas_dict = request.canvas_data
+        target_width = request.target_width
+        target_height = request.target_height
+        api_key = request.api_key
         
         original_width = canvas_dict['width']
         original_height = canvas_dict['height']

@@ -50,6 +50,7 @@ def get_psd_layers_info(psd_file_path: str) -> Tuple[PSDImage, List[Dict[str, An
 
         layer_info = {
             'id': layer_id,
+            'index': layer_id,  # 添加 index 键用于兼容性
             'name': layer.name,
             'type': layer.kind,
             'visible': layer.visible,
@@ -59,7 +60,13 @@ def get_psd_layers_info(psd_file_path: str) -> Tuple[PSDImage, List[Dict[str, An
             'bottom': clamped_bbox[3],    # 下邊界 y
             'width': clamped_bbox[2] - clamped_bbox[0],   # 寬度
             'height': clamped_bbox[3] - clamped_bbox[1],  # 高度
-            'level': level  # 圖層嵌套層級
+            'level': level,  # 圖層嵌套層級
+            'bounds': {  # 添加 bounds 格式用于兼容性
+                'left': clamped_bbox[0],
+                'top': clamped_bbox[1],
+                'right': clamped_bbox[2],
+                'bottom': clamped_bbox[3]
+            }
         }
 
         layer_id += 1

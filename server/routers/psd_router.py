@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.concurrency import run_in_threadpool
 from psd_tools import PSDImage
@@ -160,9 +160,16 @@ async def _create_psd_file_template(
 
 
 @router.post("/upload")
-async def upload_psd(file: UploadFile = File(...)):
+async def upload_psd(
+    file: UploadFile = File(...),
+    generate_layer_images: Optional[str] = Form(None)
+):
     """
     上传PSD文件并解析其图层结构，同时自动创建模板
+    
+    Args:
+        file: PSD文件
+        generate_layer_images: 是否立即生成所有图层图像（默认False，使用懒加载）
     
     Returns:
         {
@@ -176,7 +183,10 @@ async def upload_psd(file: UploadFile = File(...)):
             "template_created": bool  # 是否成功创建模板
         }
     """
-    print(f'🎨 Uploading PSD file: {file.filename}')
+    # 转换参数
+    should_generate_images = generate_layer_images == 'true' if generate_layer_images else False
+    
+    print(f'🎨 上传 PSD 文件: {file.filename} (懒加载模式: {not should_generate_images})')
     
     # 验证文件类型
     if not file.filename or not file.filename.lower().endswith('.psd'):
@@ -198,8 +208,12 @@ async def upload_psd(file: UploadFile = File(...)):
         psd = PSDImage.open(BytesIO(content))
         width, height = psd.width, psd.height
         
-        # 提取图层信息
-        layers_info = await run_in_threadpool(_extract_layers_info, psd, file_id)
+        # 提取图层信息（根据参数决定是否生成图层图像）
+        if should_generate_images:
+            layers_info = await run_in_threadpool(_extract_layers_info, psd, file_id)
+        else:
+            # 快速模式：只提取图层元数据，不生成图层图像
+            layers_info = await run_in_threadpool(_extract_layers_info_fast, psd, file_id)
         
         # 生成缩略图
         thumbnail_url = await run_in_threadpool(_generate_thumbnail, psd, file_id)
@@ -235,7 +249,7 @@ async def upload_psd(file: UploadFile = File(...)):
         
         return {
             'file_id': file_id,
-            'url': f'http://localhost:{DEFAULT_PORT}/api/psd/file/{file_id}',
+            'url': f'/api/psd/file/{file_id}',
             'width': width,
             'height': height,
             'layers': layers_info,
@@ -336,16 +350,40 @@ async def get_psd_metadata(file_id: str):
 @router.get("/layer/{file_id}/{layer_index}")
 async def get_layer_image(file_id: str, layer_index: int):
     """
-    获取指定图层的图像
+    获取指定图层的图像（支持懒加载）
+    如果图层图像不存在，自动生成
     
     Args:
         file_id: PSD文件ID
         layer_index: 图层索引
     """
     layer_path = os.path.join(PSD_DIR, f'{file_id}_layer_{layer_index}.png')
-    if not os.path.exists(layer_path):
-        raise HTTPException(status_code=404, detail="Layer image not found")
-    return FileResponse(layer_path)
+    
+    # 如果图层图像已存在，直接返回
+    if os.path.exists(layer_path):
+        return FileResponse(layer_path)
+    
+    # 否则，按需生成图层图像（懒加载）
+    print(f'📥 按需生成图层图像: {file_id}, layer {layer_index}')
+    
+    try:
+        psd_path = os.path.join(PSD_DIR, f'{file_id}.psd')
+        if not os.path.exists(psd_path):
+            raise HTTPException(status_code=404, detail="PSD file not found")
+        
+        # 加载PSD并生成指定图层的图像
+        layer_image = await run_in_threadpool(_generate_layer_image_on_demand, psd_path, file_id, layer_index)
+        
+        if layer_image and os.path.exists(layer_path):
+            return FileResponse(layer_path)
+        else:
+            raise HTTPException(status_code=404, detail="Failed to generate layer image")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f'❌ 按需生成图层图像失败: {e}')
+        raise HTTPException(status_code=500, detail=f"Error generating layer image: {str(e)}")
 
 
 @router.post("/update_layer/{file_id}/{layer_index}")
@@ -369,7 +407,7 @@ async def update_layer(file_id: str, layer_index: int, file: UploadFile = File(.
         
         return {
             'success': True,
-            'layer_url': f'http://localhost:{DEFAULT_PORT}/api/psd/layer/{file_id}/{layer_index}'
+            'layer_url': f'/api/psd/layer/{file_id}/{layer_index}'
         }
         
     except Exception as e:
@@ -410,7 +448,7 @@ async def export_psd(file_id: str, format: str = "png"):
         
         return {
             'export_id': f'{export_id}.{ext}',
-            'url': f'http://localhost:{DEFAULT_PORT}/api/file/{export_id}.{ext}'
+            'url': f'/api/file/{export_id}.{ext}'
         }
         
     except Exception as e:
@@ -523,6 +561,89 @@ def _composite_layer_with_transparency(layer) -> Optional[Image.Image]:
         return None
 
 
+def _extract_layers_info_fast(psd: PSDImage, file_id: str) -> List[Dict[str, Any]]:
+    """
+    快速提取图层信息（不生成图层图像）
+    用于加速PSD上传，图层图像采用懒加载方式
+    """
+    layers_info: List[Dict[str, Any]] = []
+    current_index = 0
+
+    def next_index() -> int:
+        nonlocal current_index
+        idx = current_index
+        current_index += 1
+        return idx
+
+    def process_layer_recursive(layer, parent_index: Optional[int] = None) -> int:
+        idx = next_index()
+        layer_name = getattr(layer, 'name', f'Layer {idx}')
+
+        layer_type = 'group' if layer.is_group() else 'layer'
+        if hasattr(layer, 'kind') and getattr(layer, 'kind', None) == 'type':
+            layer_type = 'text'
+
+        layer_info: Dict[str, Any] = {
+            'index': idx,
+            'name': layer_name,
+            'visible': getattr(layer, 'visible', True),
+            'opacity': getattr(layer, 'opacity', 255),
+            'blend_mode': str(getattr(layer, 'blend_mode', 'normal')),
+            'left': getattr(layer, 'left', 0),
+            'top': getattr(layer, 'top', 0),
+            'width': getattr(layer, 'width', 0),
+            'height': getattr(layer, 'height', 0),
+            'parent_index': parent_index,
+            'type': layer_type,
+            # 懒加载：使用相对路径，前端按需请求
+            'image_url': f'/api/psd/layer/{file_id}/{idx}' if layer_type != 'group' else None,
+            'lazy_loaded': True  # 标记为懒加载
+        }
+
+        # 文字层属性
+        if layer_type == 'text' and hasattr(layer, 'text_data'):
+            text_data = layer.text_data
+            layer_info.update({
+                'font_family': getattr(text_data, 'font_name', 'Arial'),
+                'font_size': getattr(text_data, 'font_size', 16),
+                'font_weight': getattr(text_data, 'font_weight', 'normal'),
+                'font_style': getattr(text_data, 'font_style', 'normal'),
+                'text_align': getattr(text_data, 'text_align', 'left'),
+                'text_color': getattr(text_data, 'text_color', '#000000'),
+                'text_content': getattr(text_data, 'text_content', ''),
+                'line_height': getattr(text_data, 'line_height', 1.2),
+                'letter_spacing': getattr(text_data, 'letter_spacing', 0),
+                'text_decoration': getattr(text_data, 'text_decoration', 'none'),
+            })
+
+        layers_info.append(layer_info)
+
+        # 递归处理群组
+        if layer.is_group():
+            try:
+                for child in layer:
+                    process_layer_recursive(child, parent_index=idx)
+            except Exception as e:
+                print(f'Warning: Failed to traverse group {idx}: {e}')
+
+        return idx
+
+    # 遍历所有图层
+    total_layers = len(list(psd))
+    print(f'🎨 快速解析 PSD（{total_layers}层）')
+    
+    try:
+        for top_layer in psd:
+            process_layer_recursive(top_layer, parent_index=None)
+    except Exception as e:
+        print(f'❌ 快速解析失败: {e}')
+        import traceback
+        traceback.print_exc()
+
+    print(f'✅ 快速解析完成，共 {len(layers_info)} 個圖層（懶加載模式）')
+    return layers_info
+
+
 def _extract_layers_info(psd: PSDImage, file_id: str) -> List[Dict[str, Any]]:
     """
     提取所有图层（含群组內子层、文字层）的信息並保存圖層圖像。
@@ -537,7 +658,6 @@ def _extract_layers_info(psd: PSDImage, file_id: str) -> List[Dict[str, Any]]:
         nonlocal current_index
         idx = current_index
         current_index += 1
-        print(f'🔢 分配圖層索引: {idx}')
         return idx
 
     def process_layer_recursive(layer, parent_index: Optional[int] = None) -> int:
@@ -549,7 +669,8 @@ def _extract_layers_info(psd: PSDImage, file_id: str) -> List[Dict[str, Any]]:
         if hasattr(layer, 'kind') and getattr(layer, 'kind', None) == 'type':
             layer_type = 'text'
 
-        print(f'📋 處理圖層 {idx}: "{layer_name}" (類型: {layer_type}, 父層: {parent_index})')
+        # 只在调试模式下打印详细日志
+        # print(f'📋 處理圖層 {idx}: "{layer_name}" (類型: {layer_type}, 父層: {parent_index})')
 
         layer_info: Dict[str, Any] = {
             'index': idx,
@@ -625,16 +746,18 @@ def _extract_layers_info(psd: PSDImage, file_id: str) -> List[Dict[str, Any]]:
                         composed = composed.convert('RGBA')
                     
                     composed.save(layer_path, format='PNG')
-                    layer_info['image_url'] = f'http://localhost:{DEFAULT_PORT}/api/psd/layer/{file_id}/{idx}'
-                    print(f'✅ 成功生成圖層 {idx} ({getattr(layer, "name", "")}) 圖像: {composed.size}, 模式: {composed.mode}')
+                    layer_info['image_url'] = f'/api/psd/layer/{file_id}/{idx}'
+                    # print(f'✅ 成功生成圖層 {idx} ({getattr(layer, "name", "")}) 圖像: {composed.size}, 模式: {composed.mode}')
                 else:
                     layer_info['image_url'] = None
-                    print(f'⚠️ 圖層 {idx} ({getattr(layer, "name", "")}) 為空圖像，跳過')
+                    # print(f'⚠️ 圖層 {idx} ({getattr(layer, "name", "")}) 為空圖像，跳過')
             else:
                 layer_info['image_url'] = None
-                print(f'⚠️ 圖層 {idx} ({getattr(layer, "name", "")}) 無法合成，跳過')
+                # print(f'⚠️ 圖層 {idx} ({getattr(layer, "name", "")}) 無法合成，跳過')
         except Exception as e:
-            print(f'❌ 生成圖層 {idx} ({getattr(layer, "name", "")}) 圖像失敗: {e}')
+            # 只在真正失败时打印错误
+            if idx % 10 == 0:  # 每10个图层打印一次进度
+                print(f'⚠️ 圖層 {idx} 處理失敗: {e}')
             layer_info['image_url'] = None
         finally:
             # 還原可見性
@@ -657,10 +780,13 @@ def _extract_layers_info(psd: PSDImage, file_id: str) -> List[Dict[str, Any]]:
         return idx
 
     # 自頂向下遍歷所有最上層圖層
-    print(f'🎨 開始解析 PSD 文件，總圖層數: {len(list(psd))}')
+    total_layers = len(list(psd))
+    print(f'🎨 開始解析 PSD 文件，總圖層數: {total_layers}')
     try:
         for i, top_layer in enumerate(psd):
-            print(f'🔄 處理頂層圖層 {i}: {getattr(top_layer, "name", f"Layer {i}")}')
+            # 每处理5个顶层图层打印一次进度
+            if i % 5 == 0 or i == total_layers - 1:
+                print(f'🔄 進度: {i + 1}/{total_layers} - {getattr(top_layer, "name", f"Layer {i}")}')
             process_layer_recursive(top_layer, parent_index=None)
     except Exception as e:
         print(f'❌ 遍歷 PSD 失敗: {e}')
@@ -668,10 +794,83 @@ def _extract_layers_info(psd: PSDImage, file_id: str) -> List[Dict[str, Any]]:
         traceback.print_exc()
 
     print(f'✅ PSD 解析完成，共提取 {len(layers_info)} 個圖層')
-    for layer in layers_info:
-        print(f'  - 圖層 {layer["index"]}: "{layer["name"]}" ({layer["type"]}) - 尺寸: {layer["width"]}x{layer["height"]} - 圖像: {bool(layer.get("image_url"))}')
+    # 只打印统计信息，不打印每个图层详情
+    with_images = sum(1 for layer in layers_info if layer.get('image_url'))
+    print(f'  - 總圖層: {len(layers_info)} | 含圖像: {with_images} | 空圖層: {len(layers_info) - with_images}')
 
     return layers_info
+
+
+def _generate_layer_image_on_demand(psd_path: str, file_id: str, layer_index: int) -> bool:
+    """
+    按需生成单个图层的图像（懒加载）
+    
+    Args:
+        psd_path: PSD文件路径
+        file_id: 文件ID
+        layer_index: 图层索引
+    
+    Returns:
+        是否成功生成
+    """
+    try:
+        psd = PSDImage.open(psd_path)
+        
+        # 查找指定索引的图层
+        current_index = 0
+        target_layer = None
+        
+        def find_layer(layer, parent_index=None):
+            nonlocal current_index, target_layer
+            
+            if current_index == layer_index:
+                target_layer = layer
+                return True
+            
+            current_index += 1
+            
+            if layer.is_group():
+                for child in layer:
+                    if find_layer(child, current_index - 1):
+                        return True
+            
+            return False
+        
+        for top_layer in psd:
+            if find_layer(top_layer):
+                break
+        
+        if target_layer is None:
+            print(f'❌ 未找到图层索引: {layer_index}')
+            return False
+        
+        # 生成图层图像
+        composed = _composite_layer_with_transparency(target_layer)
+        
+        if composed is not None:
+            # 检查是否有内容
+            img_array = np.array(composed)
+            has_content = False
+            
+            if len(img_array.shape) == 3 and img_array.shape[2] == 4:
+                has_content = np.any(img_array[:, :, 3] > 10)
+            
+            if has_content:
+                layer_path = os.path.join(PSD_DIR, f'{file_id}_layer_{layer_index}.png')
+                
+                if composed.mode != 'RGBA':
+                    composed = composed.convert('RGBA')
+                
+                composed.save(layer_path, format='PNG')
+                print(f'✅ 成功生成图层 {layer_index} 图像')
+                return True
+        
+        print(f'⚠️ 图层 {layer_index} 无内容')
+        return False
+        
+    except Exception as e:
+        print(f'❌ 生成图层 {layer_index} 失败: {e}')
+        return False
 
 
 def _generate_thumbnail(psd: PSDImage, file_id: str) -> str:
@@ -688,7 +887,7 @@ def _generate_thumbnail(psd: PSDImage, file_id: str) -> str:
         thumbnail_path = os.path.join(PSD_DIR, f'{file_id}_thumbnail.png')
         thumbnail.save(thumbnail_path, format='PNG')
         
-        return f'http://localhost:{DEFAULT_PORT}/api/psd/thumbnail/{file_id}'
+        return f'/api/psd/thumbnail/{file_id}'
         
     except Exception as e:
         print(f'Warning: Failed to generate thumbnail: {e}')
@@ -775,7 +974,7 @@ async def duplicate_layer(file_id: str, layer_index: int):
         if os.path.exists(original_layer_path):
             import shutil
             shutil.copy2(original_layer_path, new_layer_path)
-            new_layer['image_url'] = f'http://localhost:{DEFAULT_PORT}/api/psd/layer/{file_id}/{new_layer_index}'
+            new_layer['image_url'] = f'/api/psd/layer/{file_id}/{new_layer_index}'
         
         # 添加新图层到元数据
         metadata['layers'].append(new_layer)
