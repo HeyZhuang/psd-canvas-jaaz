@@ -14,6 +14,7 @@ const CanvasPopbarWrapper = () => {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const [showAddToChat, setShowAddToChat] = useState(false)
   const [showMagicGenerate, setShowMagicGenerate] = useState(false)
+  const [elementType, setElementType] = useState<'text' | 'image' | 'shape' | 'mixed' | null>(null)
 
   const selectedImagesRef = useRef<TCanvasAddImagesToChatEvent>([])
   const selectedElementsRef = useRef<OrderedExcalidrawElement[]>([])
@@ -24,6 +25,7 @@ const CanvasPopbarWrapper = () => {
       setPos(null)
       setShowAddToChat(false)
       setShowMagicGenerate(false)
+      setElementType(null)
       return
     }
 
@@ -31,16 +33,35 @@ const CanvasPopbarWrapper = () => {
       (element) => element.type === 'image' && selectedIds[element.id]
     ) as ExcalidrawImageElement[]
 
+    // 获取所有选中的元素
+    const allSelectedElements = elements.filter((element) => selectedIds[element.id])
+    const selectedCount = allSelectedElements.length
+
+    // 判断元素类型
+    let detectedType: 'text' | 'image' | 'shape' | 'mixed' | null = null
+    if (selectedCount === 1) {
+      const element = allSelectedElements[0]
+      if (element.type === 'text') {
+        detectedType = 'text'
+      } else if (element.type === 'image') {
+        detectedType = 'image'
+      } else if (['rectangle', 'ellipse', 'diamond', 'line', 'arrow'].includes(element.type)) {
+        detectedType = 'shape'
+      }
+    } else if (selectedCount > 1) {
+      detectedType = 'mixed'
+    }
+    setElementType(detectedType)
+
     // 判断是否显示添加到对话按钮：选中图片元素
     const hasSelectedImages = selectedImages.length > 0
     setShowAddToChat(hasSelectedImages)
 
     // 判断是否显示魔法生成按钮：选中2个以上元素（包含所有类型）
-    const selectedCount = Object.keys(selectedIds).length
     setShowMagicGenerate(selectedCount >= 2)
 
-    // 如果既没有选中图片，也没有满足魔法生成条件，隐藏弹窗
-    if (!hasSelectedImages && selectedCount < 2) {
+    // 如果既没有选中图片，也没有满足魔法生成条件，且没有单个特定类型元素，隐藏弹窗
+    if (!hasSelectedImages && selectedCount < 2 && !['text', 'image', 'shape'].includes(detectedType || '')) {
       setPos(null)
       return
     }
@@ -110,19 +131,22 @@ const CanvasPopbarWrapper = () => {
   })
 
   return (
-    <div className='absolute left-0 bottom-0 w-full h-full z-20 pointer-events-none'>
-      <AnimatePresence>
-        {pos && (showAddToChat || showMagicGenerate) && (
-          <CanvasPopbarContainer
-            pos={pos}
-            selectedImages={selectedImagesRef.current}
-            selectedElements={selectedElementsRef.current}
-            showAddToChat={showAddToChat}
-            showMagicGenerate={showMagicGenerate}
-          />
-        )}
-      </AnimatePresence>
-    </div>
+    // Pop-bar 功能已移至顶部工具栏，此组件保留但不显示
+    null
+    // <div className='absolute left-0 bottom-0 w-full h-full z-20 pointer-events-none'>
+    //   <AnimatePresence>
+    //     {pos && (showAddToChat || showMagicGenerate || elementType === 'text' || elementType === 'image' || elementType === 'shape') && (
+    //       <CanvasPopbarContainer
+    //         pos={pos}
+    //         selectedImages={selectedImagesRef.current}
+    //         selectedElements={selectedElementsRef.current}
+    //         showAddToChat={showAddToChat}
+    //         showMagicGenerate={showMagicGenerate}
+    //         elementType={elementType}
+    //       />
+    //     )}
+    //   </AnimatePresence>
+    // </div>
   )
 }
 

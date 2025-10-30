@@ -6,6 +6,7 @@ import CanvasPopbarWrapper from '@/components/canvas/pop-bar'
 // VideoCanvasOverlay removed - using native Excalidraw embeddable elements instead
 import ChatInterface from '@/components/chat/Chat'
 import { PSDLayerSidebar } from '@/components/canvas/PSDLayerSidebar'
+import { CanvasTopToolbar } from '@/components/canvas/toolbar/CanvasTopToolbar'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { CanvasProvider } from '@/contexts/canvas'
 import { Session } from '@/types/types'
@@ -134,6 +135,8 @@ function Canvas() {
                   <CanvasExcali canvasId={id} initialData={canvas?.data} />
                   <CanvasMenu canvasId={id} />
                   <CanvasPopbarWrapper />
+                  {/* 顶部工具栏 - 根据选中元素类型动态显示 */}
+                  <CanvasTopToolbar />
                 </div>
               )}
             </div>

@@ -2,6 +2,71 @@
   display: none !important;
 }
 
+/* 隐藏Excalidraw自带的原生弹框工具栏 */
+.excalidraw .excalidraw-contextMenu {
+  display: none !important;
+}
+
+/* 隐藏选中元素时弹出的属性工具栏 */
+.excalidraw .ToolIcon__floating {
+  display: none !important;
+}
+
+/* 隐藏浮动工具栏容器 */
+.excalidraw .layer-ui__wrapper__footer-center {
+  display: none !important;
+}
+
+/* 隐藏选中元素时的快捷操作栏 */
+.excalidraw .App-menu_bottom__left {
+  display: none !important;
+}
+
+/* 隐藏形状属性栏（描边、字体等） */
+.excalidraw .excalidraw-floating-toolbar {
+  display: none !important;
+}
+
+/* 隐藏所有弹出的属性面板 */
+.excalidraw .popover.popover--align-start {
+  display: none !important;
+}
+
+/* 隐藏工具栏中的颜色选择器等弹出面板 */
+.excalidraw .color-picker-popover {
+  display: none !important;
+}
+
+/* 隐藏文字工具的字体选择面板 */
+.excalidraw .text-properties {
+  display: none !important;
+}
+
+/* 隐藏点击工具栏按钮时的所有弹出层 */
+.excalidraw .Island {
+  display: none !important;
+}
+
+/* 但保留主菜单栏 */
+.excalidraw .App-menu__left .Island {
+  display: flex !important;
+}
+
+/* 隐藏底部工具栏中的所有弹出内容 */
+.excalidraw .App-menu_bottom .Island {
+  display: none !important;
+}
+
+/* 隐藏所有工具提示和浮动选项 */
+.excalidraw [role="dialog"] {
+  display: none !important;
+}
+
+/* 隐藏形状库面板 */
+.excalidraw .library-menu-items-container {
+  display: none !important;
+}
+
 /* Conditionally hide left toolbar panel when embeddable is selected */
 .excalidraw.hide-left-panel .App-menu__left {
   display: none !important;
