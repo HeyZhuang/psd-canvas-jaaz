@@ -7,7 +7,7 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 print('Importing websocket_router')
 from routers.websocket_router import *  # DO NOT DELETE THIS LINE, OTHERWISE, WEBSOCKET WILL NOT WORK
 print('Importing routers')
-from routers import config_router, image_router, root_router, workspace, canvas, ssl_test, chat_router, settings, tool_confirmation, psd_router, font_router, psd_resize_router
+from routers import config_router, image_router, root_router, workspace, canvas, ssl_test, chat_router, settings, tool_confirmation, psd_router, font_router, psd_resize_router, canvas_resize_router, template_router
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI
@@ -44,12 +44,13 @@ async def lifespan(app: FastAPI):
     # onshutdown
 
 print('Creating FastAPI app')
+# 增加请求体大小限制到100MB，支持大型PSD文件和复杂画布
 app = FastAPI(lifespan=lifespan)
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3001", "http://localhost:3004", "http://127.0.0.1:3001", "http://127.0.0.1:3004"],  # Vite dev server
+    allow_origins=["http://localhost:3001", "http://localhost:3100", "http://127.0.0.1:3001", "http://127.0.0.1:3100"],  # Vite dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -65,6 +66,8 @@ app.include_router(workspace.router)
 app.include_router(image_router.router)
 app.include_router(psd_router.router)
 app.include_router(psd_resize_router.router)
+app.include_router(canvas_resize_router.router)
+app.include_router(template_router.router)
 app.include_router(ssl_test.router)
 app.include_router(chat_router.router)
 app.include_router(font_router.router)
@@ -110,10 +113,19 @@ if __name__ == "__main__":
         sorted(_bypass | current - {""}))
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--port', type=int, default=57988,
+    parser.add_argument('--port', type=int, default=58000,
                         help='Port to run the server on')
     args = parser.parse_args()
     import uvicorn
     print("🌟Starting server, UI_DIST_DIR:", os.environ.get('UI_DIST_DIR'))
 
-    uvicorn.run(socket_app, host="127.0.0.1", port=args.port)
+    # 配置uvicorn，增加请求体大小限制到100MB，支持大型PSD文件和复杂画布
+    # limit_max_requests: 最大并发请求数
+    # timeout_keep_alive: 保持连接的超时时间（秒）
+    uvicorn.run(
+        socket_app, 
+        host="127.0.0.1", 
+        port=args.port,
+        limit_max_requests=10000,  # 允许更多并发请求
+        timeout_keep_alive=120,  # 保持连接2分钟
+    )

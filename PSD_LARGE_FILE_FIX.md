@@ -6,7 +6,7 @@
 
 ```
 Failed to fetch
-GET http://localhost:57988/api/psd/file/im_byJdcbCt net::ERR_FAILED 200 (OK)
+GET http://localhost:58000/api/psd/file/im_byJdcbCt net::ERR_FAILED 200 (OK)
 ```
 
 虽然HTTP状态码是200，但fetch操作失败。

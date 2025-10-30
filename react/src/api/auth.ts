@@ -102,12 +102,18 @@ export async function getAuthStatus(): Promise<AuthStatus> {
 
   if (token && userInfo) {
     try {
-      // Always try to refresh token when we have one
-      const newToken = await refreshToken(token)
+      // Only refresh token if BASE_API_URL is available (cloud mode)
+      // In development mode (local), skip token refresh as the API doesn't exist
+      if (BASE_API_URL && BASE_API_URL !== '') {
+        // Always try to refresh token when we have one
+        const newToken = await refreshToken(token)
 
-      // Save the new token
-      localStorage.setItem('jaaz_access_token', newToken)
-      console.log('Token refreshed successfully')
+        // Save the new token
+        localStorage.setItem('jaaz_access_token', newToken)
+        console.log('Token refreshed successfully')
+      } else {
+        console.log('Development mode: skipping token refresh')
+      }
 
       const authStatus = {
         status: 'logged_in' as const,

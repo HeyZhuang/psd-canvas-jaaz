@@ -28,11 +28,12 @@ export const ConfigsProvider = ({
   const { data: modelList, refetch: refreshModels } = useQuery({
     queryKey: ['list_models_2'],
     queryFn: () => listModels(),
-    staleTime: 1000, // 5分钟内数据被认为是新鲜的
+    staleTime: 5 * 60 * 1000, // 5分钟内数据被认为是新鲜的
     placeholderData: (previousData) => previousData, // 关键：显示旧数据同时获取新数据
     refetchOnWindowFocus: true, // 窗口获得焦点时重新获取
     refetchOnReconnect: true, // 网络重连时重新获取
     refetchOnMount: true, // 挂载时重新获取
+    retry: 1, // 只重试1次，避免阻塞
   })
 
   useEffect(() => {

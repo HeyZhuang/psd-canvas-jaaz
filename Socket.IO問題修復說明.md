@@ -5,7 +5,7 @@
 您遇到的錯誤：
 ```
 ❌ Socket.IO connection error: Error: timeout
-WebSocket connection to 'ws://localhost:57988/socket.io/' failed
+WebSocket connection to 'ws://localhost:58000/socket.io/' failed
 ```
 
 ## 🔧 已實施的修復
@@ -70,7 +70,7 @@ npm run dev
 
 如果您的應用需要實時功能（如實時協作、實時通知等），需要：
 
-1. 確保後端有 Socket.IO 服務器運行在端口 `57988`
+1. 確保後端有 Socket.IO 服務器運行在端口 `58000`
 2. 或修改 `/react/src/contexts/socket.tsx` 中的端口配置
 
 ## 🎁 關於 Gemini API 配額

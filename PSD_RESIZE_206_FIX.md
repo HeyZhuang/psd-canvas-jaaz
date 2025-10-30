@@ -2,7 +2,7 @@
 
 ## 🐛 问题描述
 
-用户在点击"开始智能缩放"按钮后，前端发出请求到 `http://localhost:57988/api/psd/file/{file_id}`，返回状态码206（Partial Content），导致前端报错："Failed to fetch"。
+用户在点击"开始智能缩放"按钮后，前端发出请求到 `http://localhost:58000/api/psd/file/{file_id}`，返回状态码206（Partial Content），导致前端报错："Failed to fetch"。
 
 ## 🔍 问题分析
 

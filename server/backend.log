@@ -1,0 +1,1241 @@
+INFO:     Started server process [573247]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:58000 (Press CTRL+C to quit)
+Importing websocket_router
+Importing routers
+local db version (3,) latest version 3
+✅ PSD目录初始化成功: /home/ubuntu/jaaz/server/user_data/files/psd
+Importing websocket_state
+Importing websocket_service
+Importing config_service
+Importing tool_service
+Creating FastAPI app
+Including routers
+Creating socketio app
+🌟Starting server, UI_DIST_DIR: None
+Initializing config_service
+Initializing broadcast_init_done
+Broadcasted init_done to all clients
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_gNa1HiSN/13 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53192 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_gNa1HiSN/14 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_gNa1HiSN/17 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_gNa1HiSN/20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_gNa1HiSN/22 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_gNa1HiSN/23 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59598 - "GET /api/templates/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59600 - "WebSocket /socket.io/?EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+Client kEEX1uRS8EoNNu7DAAAB connected
+New connection added: kEEX1uRS8EoNNu7DAAAB, total connections: 1
+INFO:     127.0.0.1:50950 - "GET /api/canvas/default HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50954 - "GET /api/canvas/default HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39696 - "GET /api/templates/items HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39710 - "GET /api/templates/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39716 - "GET /api/templates/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39728 - "GET /api/templates/collections HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39732 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39412 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+🎨 Uploading PSD file: 02 momo 舒酸定 M09 0905,0908 滿888現折100_1200x1200.psd
+🎨 開始解析 PSD 文件，總圖層數: 7
+🔄 處理頂層圖層 0: 背景
+🔢 分配圖層索引: 0
+📋 處理圖層 0: "背景" (類型: layer, 父層: None)
+⚠️ 检测到白色/浅灰色背景，设为透明
+⚠️ 圖層 0 (背景) 為空圖像，跳過
+🔄 處理頂層圖層 1: bg
+🔢 分配圖層索引: 1
+📋 處理圖層 1: "bg" (類型: group, 父層: None)
+✅ 成功生成圖層 1 (bg) 圖像: (1335, 1522), 模式: RGBA
+🔢 分配圖層索引: 2
+📋 處理圖層 2: "矩形 2" (類型: layer, 父層: 1)
+✅ 成功生成圖層 2 (矩形 2) 圖像: (1259, 1270), 模式: RGBA
+🔢 分配圖層索引: 3
+📋 處理圖層 3: "矩形 5" (類型: layer, 父層: 1)
+✅ 成功生成圖層 3 (矩形 5) 圖像: (1188, 1091), 模式: RGBA
+🔢 分配圖層索引: 4
+📋 處理圖層 4: "向量圖智慧型物件" (類型: layer, 父層: 1)
+✅ 成功生成圖層 4 (向量圖智慧型物件) 圖像: (441, 334), 模式: RGBA
+🔢 分配圖層索引: 5
+📋 處理圖層 5: "矩形 1" (類型: layer, 父層: 1)
+✅ 成功生成圖層 5 (矩形 1) 圖像: (1116, 875), 模式: RGBA
+🔢 分配圖層索引: 6
+📋 處理圖層 6: "向量圖智慧型物件" (類型: layer, 父層: 1)
+⚠️ 图层 100.00% 透明，可能为空图层
+⚠️ 圖層 6 (向量圖智慧型物件) 為空圖像，跳過
+🔢 分配圖層索引: 7
+📋 處理圖層 7: "滿$888現折$100" (類型: text, 父層: 1)
+✅ 成功生成圖層 7 (滿$888現折$100) 圖像: (787, 90), 模式: RGBA
+🔄 處理頂層圖層 2: 6角icon
+🔢 分配圖層索引: 8
+📋 處理圖層 8: "6角icon" (類型: layer, 父層: None)
+✅ 成功生成圖層 8 (6角icon) 圖像: (578, 536), 模式: RGBA
+🔄 處理頂層圖層 3: Dr
+🔢 分配圖層索引: 9
+📋 處理圖層 9: "Dr" (類型: group, 父層: None)
+✅ 成功生成圖層 9 (Dr) 圖像: (545, 740), 模式: RGBA
+🔢 分配圖層索引: 10
+📋 處理圖層 10: "向量圖智慧型物件" (類型: layer, 父層: 9)
+✅ 成功生成圖層 10 (向量圖智慧型物件) 圖像: (545, 740), 模式: RGBA
+🔢 分配圖層索引: 11
+📋 處理圖層 11: "向量圖智慧型物件" (類型: layer, 父層: 9)
+✅ 成功生成圖層 11 (向量圖智慧型物件) 圖像: (88, 45), 模式: RGBA
+🔄 處理頂層圖層 4: PD
+🔢 分配圖層索引: 12
+📋 處理圖層 12: "PD" (類型: group, 父層: None)
+✅ 成功生成圖層 12 (PD) 圖像: (1011, 771), 模式: RGBA
+🔢 分配圖層索引: 13
+📋 處理圖層 13: "向量圖智慧型物件" (類型: layer, 父層: 12)
+✅ 成功生成圖層 13 (向量圖智慧型物件) 圖像: (646, 127), 模式: RGBA
+🔢 分配圖層索引: 14
+📋 處理圖層 14: "向量圖智慧型物件" (類型: layer, 父層: 12)
+✅ 成功生成圖層 14 (向量圖智慧型物件) 圖像: (185, 208), 模式: RGBA
+🔢 分配圖層索引: 15
+📋 處理圖層 15: "向量圖智慧型物件" (類型: layer, 父層: 12)
+✅ 成功生成圖層 15 (向量圖智慧型物件) 圖像: (188, 211), 模式: RGBA
+🔢 分配圖層索引: 16
+📋 處理圖層 16: "向量圖智慧型物件" (類型: layer, 父層: 12)
+✅ 成功生成圖層 16 (向量圖智慧型物件) 圖像: (188, 210), 模式: RGBA
+🔢 分配圖層索引: 17
+📋 處理圖層 17: "矩形 3" (類型: layer, 父層: 12)
+✅ 成功生成圖層 17 (矩形 3) 圖像: (637, 124), 模式: RGBA
+🔢 分配圖層索引: 18
+📋 處理圖層 18: "向量圖智慧型物件" (類型: layer, 父層: 12)
+✅ 成功生成圖層 18 (向量圖智慧型物件) 圖像: (654, 234), 模式: RGBA
+🔢 分配圖層索引: 19
+📋 處理圖層 19: "色階 1" (類型: layer, 父層: 12)
+⚠️ 圖層 19 (色階 1) 無法合成，跳過
+🔄 處理頂層圖層 5: logo
+🔢 分配圖層索引: 20
+📋 處理圖層 20: "logo" (類型: group, 父層: None)
+✅ 成功生成圖層 20 (logo) 圖像: (468, 62), 模式: RGBA
+🔢 分配圖層索引: 21
+📋 處理圖層 21: "直線 1" (類型: layer, 父層: 20)
+✅ 成功生成圖層 21 (直線 1) 圖像: (6, 58), 模式: RGBA
+🔢 分配圖層索引: 22
+📋 處理圖層 22: "舒酸定LOGO" (類型: layer, 父層: 20)
+✅ 成功生成圖層 22 (舒酸定LOGO) 圖像: (184, 62), 模式: RGBA
+🔢 分配圖層索引: 23
+📋 處理圖層 23: "向量圖智慧型物件" (類型: layer, 父層: 20)
+✅ 成功生成圖層 23 (向量圖智慧型物件) 圖像: (212, 39), 模式: RGBA
+🔄 處理頂層圖層 6: 保護文
+🔢 分配圖層索引: 24
+📋 處理圖層 24: "保護文" (類型: layer, 父層: None)
+✅ 成功生成圖層 24 (保護文) 圖像: (600, 21), 模式: RGBA
+✅ PSD 解析完成，共提取 25 個圖層
+  - 圖層 0: "背景" (layer) - 尺寸: 1200x1200 - 圖像: False
+  - 圖層 1: "bg" (group) - 尺寸: 1335x1522 - 圖像: True
+  - 圖層 2: "矩形 2" (layer) - 尺寸: 1259x1270 - 圖像: True
+  - 圖層 3: "矩形 5" (layer) - 尺寸: 1188x1091 - 圖像: True
+  - 圖層 4: "向量圖智慧型物件" (layer) - 尺寸: 441x334 - 圖像: True
+  - 圖層 5: "矩形 1" (layer) - 尺寸: 1116x875 - 圖像: True
+  - 圖層 6: "向量圖智慧型物件" (layer) - 尺寸: 1302x1259 - 圖像: False
+  - 圖層 7: "滿$888現折$100" (text) - 尺寸: 787x90 - 圖像: True
+  - 圖層 8: "6角icon" (layer) - 尺寸: 578x536 - 圖像: True
+  - 圖層 9: "Dr" (group) - 尺寸: 545x740 - 圖像: True
+  - 圖層 10: "向量圖智慧型物件" (layer) - 尺寸: 545x740 - 圖像: True
+  - 圖層 11: "向量圖智慧型物件" (layer) - 尺寸: 88x45 - 圖像: True
+  - 圖層 12: "PD" (group) - 尺寸: 1011x771 - 圖像: True
+  - 圖層 13: "向量圖智慧型物件" (layer) - 尺寸: 646x127 - 圖像: True
+  - 圖層 14: "向量圖智慧型物件" (layer) - 尺寸: 185x208 - 圖像: True
+  - 圖層 15: "向量圖智慧型物件" (layer) - 尺寸: 188x211 - 圖像: True
+  - 圖層 16: "向量圖智慧型物件" (layer) - 尺寸: 188x210 - 圖像: True
+  - 圖層 17: "矩形 3" (layer) - 尺寸: 637x124 - 圖像: True
+  - 圖層 18: "向量圖智慧型物件" (layer) - 尺寸: 654x234 - 圖像: True
+  - 圖層 19: "色階 1" (layer) - 尺寸: 0x0 - 圖像: False
+  - 圖層 20: "logo" (group) - 尺寸: 468x62 - 圖像: True
+  - 圖層 21: "直線 1" (layer) - 尺寸: 6x58 - 圖像: True
+  - 圖層 22: "舒酸定LOGO" (layer) - 尺寸: 184x62 - 圖像: True
+  - 圖層 23: "向量圖智慧型物件" (layer) - 尺寸: 212x39 - 圖像: True
+  - 圖層 24: "保護文" (layer) - 尺寸: 600x21 - 圖像: True
+✅ PSD文件模板创建成功: ca7dc1f0-d927-4f05-9137-c56898d0f3b3
+INFO:     127.0.0.1:39418 - "POST /api/psd/upload HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36124 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_JCGmrJ0E/2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36120 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     connection closed
+Client kEEX1uRS8EoNNu7DAAAB disconnected
+Connection removed: kEEX1uRS8EoNNu7DAAAB, total connections: 0
+INFO:     127.0.0.1:36108 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36106 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52096 - "WebSocket /socket.io/?EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_JCGmrJ0E/3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36116 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+Client i69TpNmf6-XVn7t0AAAD connected
+New connection added: i69TpNmf6-XVn7t0AAAD, total connections: 1
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_JCGmrJ0E/4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_JCGmrJ0E/5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_JCGmrJ0E/7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52082 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_JCGmrJ0E/8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_JCGmrJ0E/9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_JCGmrJ0E/12 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_JCGmrJ0E/17 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52106 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52102 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_JCGmrJ0E/20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_JCGmrJ0E/21 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_JCGmrJ0E/22 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53196 - "GET /api/psd/layer/im_JCGmrJ0E/24 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49512 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49528 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+❌ 跳過圖層 bg: 圖像為空
+❌ 跳過圖層 Dr: 圖像為空
+❌ 跳過圖層 PD: 圖像為空
+❌ 跳過圖層 色階 1: 圖像為空
+❌ 跳過圖層 logo: 圖像為空
+圖層 3 尺寸無效，跳過
+圖層 4 尺寸無效，跳過
+圖層 6 尺寸無效，跳過
+圖層 8 尺寸無效，跳過
+圖層 13 尺寸無效，跳過
+圖層 14 尺寸無效，跳過
+圖層 15 尺寸無效，跳過
+圖層 16 尺寸無效，跳過
+圖層 17 尺寸無效，跳過
+檢測框圖像已保存到: /tmp/tmpyd9kf4mk/detection.png
+INFO:     127.0.0.1:55278 - "POST /api/psd/resize/resize-by-id-layered HTTP/1.1" 200 OK
+Error querying Ollama: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/tags (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7a06a49f5e80>: Failed to establish a new connection: [Errno 111] Connection refused'))
+INFO:     127.0.0.1:59304 - "GET /api/list_models HTTP/1.1" 200 OK
+INFO:     connection closed
+Client i69TpNmf6-XVn7t0AAAD disconnected
+Connection removed: i69TpNmf6-XVn7t0AAAD, total connections: 0
+INFO:     127.0.0.1:59288 - "GET /api/templates/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39330 - "WebSocket /socket.io/?EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:60568 - "WebSocket /socket.io/?EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:35020 - "WebSocket /socket.io/?EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:59290 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55288 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55308 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60558 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36698 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35024 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36684 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55304 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34932 - "GET /api/list_tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34948 - "GET /api/psd/resize/layered/psd_layered_1761756495/layer_000 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36472 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34954 - "GET /api/psd/resize/layered/psd_layered_1761756495/layer_002 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34966 - "GET /api/psd/resize/layered/psd_layered_1761756495/layer_005 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34978 - "GET /api/psd/resize/layered/psd_layered_1761756495/layer_007 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34990 - "GET /api/psd/resize/layered/psd_layered_1761756495/layer_010 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34996 - "GET /api/psd/resize/layered/psd_layered_1761756495/layer_011 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35012 - "GET /api/psd/resize/layered/psd_layered_1761756495/layer_018 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35026 - "GET /api/psd/resize/layered/psd_layered_1761756495/layer_021 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35034 - "GET /api/psd/resize/layered/psd_layered_1761756495/layer_022 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35048 - "GET /api/psd/resize/layered/psd_layered_1761756495/layer_023 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35052 - "GET /api/psd/resize/layered/psd_layered_1761756495/layer_024 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34578 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     127.0.0.1:55324 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56904 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33236 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33250 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39222 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39236 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39220 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33096 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40306 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40320 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40328 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40334 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40652 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40616 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40624 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40640 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36382 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36412 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36394 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36400 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36390 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39402 - "WebSocket /socket.io/?EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+Client 4WZe5uCWozHcSktiAAAI connected
+New connection added: 4WZe5uCWozHcSktiAAAI, total connections: 1
+INFO:     127.0.0.1:39418 - "GET /api/canvas/default HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39426 - "GET /api/canvas/default HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56964 - "GET /api/templates/items HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56966 - "GET /api/templates/collections HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56978 - "GET /api/templates/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56980 - "GET /api/templates/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56994 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     connection closed
+Client 4WZe5uCWozHcSktiAAAI disconnected
+Connection removed: 4WZe5uCWozHcSktiAAAI, total connections: 0
+INFO:     127.0.0.1:39426 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39440 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39436 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+🎨 Uploading PSD file: 02 momo 舒酸定 M09 0905,0908 滿888現折100_1200x1200.psd
+🎨 開始解析 PSD 文件，總圖層數: 7
+🔄 處理頂層圖層 0: 背景
+🔢 分配圖層索引: 0
+📋 處理圖層 0: "背景" (類型: layer, 父層: None)
+⚠️ 检测到白色/浅灰色背景，设为透明
+⚠️ 圖層 0 (背景) 為空圖像，跳過
+🔄 處理頂層圖層 1: bg
+🔢 分配圖層索引: 1
+📋 處理圖層 1: "bg" (類型: group, 父層: None)
+✅ 成功生成圖層 1 (bg) 圖像: (1335, 1522), 模式: RGBA
+🔢 分配圖層索引: 2
+📋 處理圖層 2: "矩形 2" (類型: layer, 父層: 1)
+✅ 成功生成圖層 2 (矩形 2) 圖像: (1259, 1270), 模式: RGBA
+🔢 分配圖層索引: 3
+📋 處理圖層 3: "矩形 5" (類型: layer, 父層: 1)
+✅ 成功生成圖層 3 (矩形 5) 圖像: (1188, 1091), 模式: RGBA
+🔢 分配圖層索引: 4
+📋 處理圖層 4: "向量圖智慧型物件" (類型: layer, 父層: 1)
+✅ 成功生成圖層 4 (向量圖智慧型物件) 圖像: (441, 334), 模式: RGBA
+🔢 分配圖層索引: 5
+📋 處理圖層 5: "矩形 1" (類型: layer, 父層: 1)
+✅ 成功生成圖層 5 (矩形 1) 圖像: (1116, 875), 模式: RGBA
+🔢 分配圖層索引: 6
+📋 處理圖層 6: "向量圖智慧型物件" (類型: layer, 父層: 1)
+⚠️ 图层 100.00% 透明，可能为空图层
+⚠️ 圖層 6 (向量圖智慧型物件) 為空圖像，跳過
+🔢 分配圖層索引: 7
+📋 處理圖層 7: "滿$888現折$100" (類型: text, 父層: 1)
+✅ 成功生成圖層 7 (滿$888現折$100) 圖像: (787, 90), 模式: RGBA
+🔄 處理頂層圖層 2: 6角icon
+🔢 分配圖層索引: 8
+📋 處理圖層 8: "6角icon" (類型: layer, 父層: None)
+✅ 成功生成圖層 8 (6角icon) 圖像: (578, 536), 模式: RGBA
+🔄 處理頂層圖層 3: Dr
+🔢 分配圖層索引: 9
+📋 處理圖層 9: "Dr" (類型: group, 父層: None)
+✅ 成功生成圖層 9 (Dr) 圖像: (545, 740), 模式: RGBA
+🔢 分配圖層索引: 10
+📋 處理圖層 10: "向量圖智慧型物件" (類型: layer, 父層: 9)
+✅ 成功生成圖層 10 (向量圖智慧型物件) 圖像: (545, 740), 模式: RGBA
+🔢 分配圖層索引: 11
+📋 處理圖層 11: "向量圖智慧型物件" (類型: layer, 父層: 9)
+✅ 成功生成圖層 11 (向量圖智慧型物件) 圖像: (88, 45), 模式: RGBA
+🔄 處理頂層圖層 4: PD
+🔢 分配圖層索引: 12
+📋 處理圖層 12: "PD" (類型: group, 父層: None)
+✅ 成功生成圖層 12 (PD) 圖像: (1011, 771), 模式: RGBA
+🔢 分配圖層索引: 13
+📋 處理圖層 13: "向量圖智慧型物件" (類型: layer, 父層: 12)
+✅ 成功生成圖層 13 (向量圖智慧型物件) 圖像: (646, 127), 模式: RGBA
+🔢 分配圖層索引: 14
+📋 處理圖層 14: "向量圖智慧型物件" (類型: layer, 父層: 12)
+✅ 成功生成圖層 14 (向量圖智慧型物件) 圖像: (185, 208), 模式: RGBA
+🔢 分配圖層索引: 15
+📋 處理圖層 15: "向量圖智慧型物件" (類型: layer, 父層: 12)
+✅ 成功生成圖層 15 (向量圖智慧型物件) 圖像: (188, 211), 模式: RGBA
+🔢 分配圖層索引: 16
+📋 處理圖層 16: "向量圖智慧型物件" (類型: layer, 父層: 12)
+✅ 成功生成圖層 16 (向量圖智慧型物件) 圖像: (188, 210), 模式: RGBA
+🔢 分配圖層索引: 17
+📋 處理圖層 17: "矩形 3" (類型: layer, 父層: 12)
+✅ 成功生成圖層 17 (矩形 3) 圖像: (637, 124), 模式: RGBA
+🔢 分配圖層索引: 18
+📋 處理圖層 18: "向量圖智慧型物件" (類型: layer, 父層: 12)
+✅ 成功生成圖層 18 (向量圖智慧型物件) 圖像: (654, 234), 模式: RGBA
+🔢 分配圖層索引: 19
+📋 處理圖層 19: "色階 1" (類型: layer, 父層: 12)
+⚠️ 圖層 19 (色階 1) 無法合成，跳過
+🔄 處理頂層圖層 5: logo
+🔢 分配圖層索引: 20
+📋 處理圖層 20: "logo" (類型: group, 父層: None)
+✅ 成功生成圖層 20 (logo) 圖像: (468, 62), 模式: RGBA
+🔢 分配圖層索引: 21
+📋 處理圖層 21: "直線 1" (類型: layer, 父層: 20)
+✅ 成功生成圖層 21 (直線 1) 圖像: (6, 58), 模式: RGBA
+🔢 分配圖層索引: 22
+📋 處理圖層 22: "舒酸定LOGO" (類型: layer, 父層: 20)
+✅ 成功生成圖層 22 (舒酸定LOGO) 圖像: (184, 62), 模式: RGBA
+🔢 分配圖層索引: 23
+📋 處理圖層 23: "向量圖智慧型物件" (類型: layer, 父層: 20)
+✅ 成功生成圖層 23 (向量圖智慧型物件) 圖像: (212, 39), 模式: RGBA
+🔄 處理頂層圖層 6: 保護文
+🔢 分配圖層索引: 24
+📋 處理圖層 24: "保護文" (類型: layer, 父層: None)
+✅ 成功生成圖層 24 (保護文) 圖像: (600, 21), 模式: RGBA
+✅ PSD 解析完成，共提取 25 個圖層
+  - 圖層 0: "背景" (layer) - 尺寸: 1200x1200 - 圖像: False
+  - 圖層 1: "bg" (group) - 尺寸: 1335x1522 - 圖像: True
+  - 圖層 2: "矩形 2" (layer) - 尺寸: 1259x1270 - 圖像: True
+  - 圖層 3: "矩形 5" (layer) - 尺寸: 1188x1091 - 圖像: True
+  - 圖層 4: "向量圖智慧型物件" (layer) - 尺寸: 441x334 - 圖像: True
+  - 圖層 5: "矩形 1" (layer) - 尺寸: 1116x875 - 圖像: True
+  - 圖層 6: "向量圖智慧型物件" (layer) - 尺寸: 1302x1259 - 圖像: False
+  - 圖層 7: "滿$888現折$100" (text) - 尺寸: 787x90 - 圖像: True
+  - 圖層 8: "6角icon" (layer) - 尺寸: 578x536 - 圖像: True
+  - 圖層 9: "Dr" (group) - 尺寸: 545x740 - 圖像: True
+  - 圖層 10: "向量圖智慧型物件" (layer) - 尺寸: 545x740 - 圖像: True
+  - 圖層 11: "向量圖智慧型物件" (layer) - 尺寸: 88x45 - 圖像: True
+  - 圖層 12: "PD" (group) - 尺寸: 1011x771 - 圖像: True
+  - 圖層 13: "向量圖智慧型物件" (layer) - 尺寸: 646x127 - 圖像: True
+  - 圖層 14: "向量圖智慧型物件" (layer) - 尺寸: 185x208 - 圖像: True
+  - 圖層 15: "向量圖智慧型物件" (layer) - 尺寸: 188x211 - 圖像: True
+  - 圖層 16: "向量圖智慧型物件" (layer) - 尺寸: 188x210 - 圖像: True
+  - 圖層 17: "矩形 3" (layer) - 尺寸: 637x124 - 圖像: True
+  - 圖層 18: "向量圖智慧型物件" (layer) - 尺寸: 654x234 - 圖像: True
+  - 圖層 19: "色階 1" (layer) - 尺寸: 0x0 - 圖像: False
+  - 圖層 20: "logo" (group) - 尺寸: 468x62 - 圖像: True
+  - 圖層 21: "直線 1" (layer) - 尺寸: 6x58 - 圖像: True
+  - 圖層 22: "舒酸定LOGO" (layer) - 尺寸: 184x62 - 圖像: True
+  - 圖層 23: "向量圖智慧型物件" (layer) - 尺寸: 212x39 - 圖像: True
+  - 圖層 24: "保護文" (layer) - 尺寸: 600x21 - 圖像: True
+✅ PSD文件模板创建成功: 24de1754-754b-4b31-ac62-c1fa59a5a407
+INFO:     127.0.0.1:39438 - "POST /api/psd/upload HTTP/1.1" 200 OK
+Error querying Ollama: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/tags (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7a06a495ead0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+INFO:     127.0.0.1:34906 - "GET /api/list_models HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52958 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52964 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52978 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52994 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34666 - "GET /api/list_tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34690 - "GET /api/psd/layer/im_w4OHIpjU/2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34690 - "GET /api/psd/layer/im_w4OHIpjU/3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34658 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34674 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34704 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34720 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34690 - "GET /api/psd/layer/im_w4OHIpjU/4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34690 - "GET /api/psd/layer/im_w4OHIpjU/5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34690 - "GET /api/psd/layer/im_w4OHIpjU/7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34690 - "GET /api/psd/layer/im_w4OHIpjU/8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34690 - "GET /api/psd/layer/im_w4OHIpjU/9 HTTP/1.1" 200 OK
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/protocols/http/httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/engineio/async_drivers/asgi.py", line 75, in __call__
+    await self.other_asgi_app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 124, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 110, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 390, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 289, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/routers/canvas.py", line 30, in save_canvas
+    payload = await request.json()
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 250, in json
+    body = await self.body()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 243, in body
+    async for chunk in self.stream():
+        chunks.append(chunk)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 237, in stream
+    raise ClientDisconnect()
+starlette.requests.ClientDisconnect
+INFO:     127.0.0.1:54838 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54852 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34690 - "GET /api/psd/layer/im_w4OHIpjU/12 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54820 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54862 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54836 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34690 - "GET /api/psd/layer/im_w4OHIpjU/17 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34690 - "GET /api/psd/layer/im_w4OHIpjU/20 HTTP/1.1" 200 OK
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/protocols/http/httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/engineio/async_drivers/asgi.py", line 75, in __call__
+    await self.other_asgi_app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 124, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 110, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 390, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 289, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/routers/canvas.py", line 30, in save_canvas
+    payload = await request.json()
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 250, in json
+    body = await self.body()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 243, in body
+    async for chunk in self.stream():
+        chunks.append(chunk)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 237, in stream
+    raise ClientDisconnect()
+starlette.requests.ClientDisconnect
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/protocols/http/httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/engineio/async_drivers/asgi.py", line 75, in __call__
+    await self.other_asgi_app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 124, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 110, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 390, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 289, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/routers/canvas.py", line 30, in save_canvas
+    payload = await request.json()
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 250, in json
+    body = await self.body()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 243, in body
+    async for chunk in self.stream():
+        chunks.append(chunk)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 237, in stream
+    raise ClientDisconnect()
+starlette.requests.ClientDisconnect
+INFO:     127.0.0.1:34690 - "GET /api/psd/layer/im_w4OHIpjU/21 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41156 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41146 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34690 - "GET /api/psd/layer/im_w4OHIpjU/22 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34690 - "GET /api/psd/layer/im_w4OHIpjU/24 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57372 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57378 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55724 - "GET /api/templates/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55734 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/protocols/http/httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/engineio/async_drivers/asgi.py", line 75, in __call__
+    await self.other_asgi_app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 124, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 110, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 390, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 289, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/routers/canvas.py", line 30, in save_canvas
+    payload = await request.json()
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 250, in json
+    body = await self.body()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 243, in body
+    async for chunk in self.stream():
+        chunks.append(chunk)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 237, in stream
+    raise ClientDisconnect()
+starlette.requests.ClientDisconnect
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/protocols/http/httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/engineio/async_drivers/asgi.py", line 75, in __call__
+    await self.other_asgi_app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 124, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 110, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 390, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 289, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/routers/canvas.py", line 30, in save_canvas
+    payload = await request.json()
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 250, in json
+    body = await self.body()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 243, in body
+    async for chunk in self.stream():
+        chunks.append(chunk)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 237, in stream
+    raise ClientDisconnect()
+starlette.requests.ClientDisconnect
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/protocols/http/httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/engineio/async_drivers/asgi.py", line 75, in __call__
+    await self.other_asgi_app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 124, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 110, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 390, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 289, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/routers/canvas.py", line 30, in save_canvas
+    payload = await request.json()
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 250, in json
+    body = await self.body()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 243, in body
+    async for chunk in self.stream():
+        chunks.append(chunk)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 237, in stream
+    raise ClientDisconnect()
+starlette.requests.ClientDisconnect
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/protocols/http/httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/engineio/async_drivers/asgi.py", line 75, in __call__
+    await self.other_asgi_app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 124, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 110, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 390, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 289, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/routers/canvas.py", line 30, in save_canvas
+    payload = await request.json()
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 250, in json
+    body = await self.body()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 243, in body
+    async for chunk in self.stream():
+        chunks.append(chunk)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 237, in stream
+    raise ClientDisconnect()
+starlette.requests.ClientDisconnect
+INFO:     127.0.0.1:51256 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51264 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+❌ 跳過圖層 bg: 圖像為空
+❌ 跳過圖層 Dr: 圖像為空
+❌ 跳過圖層 PD: 圖像為空
+❌ 跳過圖層 色階 1: 圖像為空
+❌ 跳過圖層 logo: 圖像為空
+Gemini API調用失敗: 400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': 'API key not valid. Please pass a valid API key.', 'status': 'INVALID_ARGUMENT', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'API_KEY_INVALID', 'domain': 'googleapis.com', 'metadata': {'service': 'generativelanguage.googleapis.com'}}, {'@type': 'type.googleapis.com/google.rpc.LocalizedMessage', 'locale': 'en-US', 'message': 'API key not valid. Please pass a valid API key.'}]}}
+错误详情: ClientError: 400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': 'API key not valid. Please pass a valid API key.', 'status': 'INVALID_ARGUMENT', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'API_KEY_INVALID', 'domain': 'googleapis.com', 'metadata': {'service': 'generativelanguage.googleapis.com'}}, {'@type': 'type.googleapis.com/google.rpc.LocalizedMessage', 'locale': 'en-US', 'message': 'API key not valid. Please pass a valid API key.'}]}}
+PSD圖層縮放失敗: 400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': 'API key not valid. Please pass a valid API key.', 'status': 'INVALID_ARGUMENT', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'API_KEY_INVALID', 'domain': 'googleapis.com', 'metadata': {'service': 'generativelanguage.googleapis.com'}}, {'@type': 'type.googleapis.com/google.rpc.LocalizedMessage', 'locale': 'en-US', 'message': 'API key not valid. Please pass a valid API key.'}]}}
+PSD分層縮放失敗: 400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': 'API key not valid. Please pass a valid API key.', 'status': 'INVALID_ARGUMENT', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'API_KEY_INVALID', 'domain': 'googleapis.com', 'metadata': {'service': 'generativelanguage.googleapis.com'}}, {'@type': 'type.googleapis.com/google.rpc.LocalizedMessage', 'locale': 'en-US', 'message': 'API key not valid. Please pass a valid API key.'}]}}
+Traceback (most recent call last):
+  File "/home/ubuntu/jaaz/server/routers/psd_resize_router.py", line 583, in resize_psd_by_id_layered
+    new_positions = await service.resize_psd_layers(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/services/gemini_psd_resize_service.py", line 475, in resize_psd_layers
+    response_text = await self.call_gemini_api(prompt, image_base64)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/services/gemini_psd_resize_service.py", line 329, in call_gemini_api
+    result = await asyncio.wait_for(_make_api_call(), timeout=timeout)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/lib/python3.13/asyncio/tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/services/gemini_psd_resize_service.py", line 298, in _make_api_call
+    response = self.client.models.generate_content(
+        model=self.model_name,
+    ...<5 lines>...
+        )
+    )
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/google/genai/models.py", line 5006, in generate_content
+    response = self._generate_content(
+        model=model, contents=contents, config=parsed_config
+    )
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/google/genai/models.py", line 3818, in _generate_content
+    response = self._api_client.request(
+        'post', path, request_dict, http_options
+    )
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1314, in request
+    response = self._request(http_request, http_options, stream=False)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1150, in _request
+    return self._retry(self._request_once, http_request, stream)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/tenacity/__init__.py", line 477, in __call__
+    do = self.iter(retry_state=retry_state)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/tenacity/__init__.py", line 378, in iter
+    result = action(retry_state)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/tenacity/__init__.py", line 420, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/tenacity/__init__.py", line 187, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/ubuntu/miniconda3/lib/python3.13/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/home/ubuntu/miniconda3/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/tenacity/__init__.py", line 480, in __call__
+    result = fn(*args, **kwargs)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1127, in _request_once
+    errors.APIError.raise_for_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/google/genai/errors.py", line 108, in raise_for_response
+    raise ClientError(status_code, response_json, response)
+google.genai.errors.ClientError: 400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': 'API key not valid. Please pass a valid API key.', 'status': 'INVALID_ARGUMENT', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'API_KEY_INVALID', 'domain': 'googleapis.com', 'metadata': {'service': 'generativelanguage.googleapis.com'}}, {'@type': 'type.googleapis.com/google.rpc.LocalizedMessage', 'locale': 'en-US', 'message': 'API key not valid. Please pass a valid API key.'}]}}
+檢測框圖像已保存到: /tmp/tmpa7jbh8cs/detection.png
+INFO:     127.0.0.1:32904 - "POST /api/psd/resize/resize-by-id-layered HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:32920 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44600 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44606 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44618 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+❌ 跳過圖層 bg: 圖像為空
+❌ 跳過圖層 Dr: 圖像為空
+❌ 跳過圖層 PD: 圖像為空
+❌ 跳過圖層 色階 1: 圖像為空
+❌ 跳過圖層 logo: 圖像為空
+圖層 8 尺寸無效，跳過
+圖層 10 尺寸無效，跳過
+圖層 11 尺寸無效，跳過
+圖層 17 尺寸無效，跳過
+檢測框圖像已保存到: /tmp/tmp7i50potc/detection.png
+INFO:     127.0.0.1:35842 - "POST /api/psd/resize/resize-by-id-layered HTTP/1.1" 200 OK
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/protocols/http/httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/engineio/async_drivers/asgi.py", line 75, in __call__
+    await self.other_asgi_app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 124, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 110, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 390, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 289, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/routers/canvas.py", line 30, in save_canvas
+    payload = await request.json()
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 250, in json
+    body = await self.body()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 243, in body
+    async for chunk in self.stream():
+        chunks.append(chunk)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 237, in stream
+    raise ClientDisconnect()
+starlette.requests.ClientDisconnect
+Error querying Ollama: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/tags (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7a06a45e2d50>: Failed to establish a new connection: [Errno 111] Connection refused'))
+INFO:     127.0.0.1:60788 - "GET /api/list_models HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35828 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42322 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60772 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47572 - "GET /api/psd/resize/layered/psd_layered_1761757236/layer_000 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47586 - "GET /api/list_tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47560 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47570 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43304 - "GET /api/psd/resize/layered/psd_layered_1761757236/layer_002 HTTP/1.1" 200 OK
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/protocols/http/httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/engineio/async_drivers/asgi.py", line 75, in __call__
+    await self.other_asgi_app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 124, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 110, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 390, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 289, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/routers/canvas.py", line 30, in save_canvas
+    payload = await request.json()
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 250, in json
+    body = await self.body()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 243, in body
+    async for chunk in self.stream():
+        chunks.append(chunk)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 237, in stream
+    raise ClientDisconnect()
+starlette.requests.ClientDisconnect
+INFO:     127.0.0.1:43290 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43312 - "GET /api/psd/resize/layered/psd_layered_1761757236/layer_003 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51470 - "GET /api/psd/resize/layered/psd_layered_1761757236/layer_004 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51486 - "GET /api/psd/resize/layered/psd_layered_1761757236/layer_005 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51490 - "GET /api/psd/resize/layered/psd_layered_1761757236/layer_006 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51498 - "GET /api/psd/resize/layered/psd_layered_1761757236/layer_007 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51512 - "GET /api/psd/resize/layered/psd_layered_1761757236/layer_013 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51516 - "GET /api/psd/resize/layered/psd_layered_1761757236/layer_014 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51526 - "GET /api/psd/resize/layered/psd_layered_1761757236/layer_015 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51542 - "GET /api/psd/resize/layered/psd_layered_1761757236/layer_016 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51550 - "GET /api/psd/resize/layered/psd_layered_1761757236/layer_018 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51562 - "GET /api/psd/resize/layered/psd_layered_1761757236/layer_021 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43520 - "GET /api/psd/resize/layered/psd_layered_1761757236/layer_022 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43536 - "GET /api/psd/resize/layered/psd_layered_1761757236/layer_023 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43550 - "GET /api/psd/resize/layered/psd_layered_1761757236/layer_024 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43558 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44552 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43680 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38400 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38422 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38416 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38426 - "POST /api/canvas/default/save HTTP/1.1" 200 OK
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/protocols/http/httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/engineio/async_drivers/asgi.py", line 75, in __call__
+    await self.other_asgi_app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 124, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 110, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 390, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/fastapi/routing.py", line 289, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/routers/canvas.py", line 30, in save_canvas
+    payload = await request.json()
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 250, in json
+    body = await self.body()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 243, in body
+    async for chunk in self.stream():
+        chunks.append(chunk)
+  File "/home/ubuntu/jaaz/server/venv/lib/python3.13/site-packages/starlette/requests.py", line 237, in stream
+    raise ClientDisconnect()
+starlette.requests.ClientDisconnect

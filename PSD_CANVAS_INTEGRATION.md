@@ -119,7 +119,7 @@ app.add_middleware(
 ```typescript
 proxy: {
   '/api': {
-    target: 'http://127.0.0.1:57988',
+    target: 'http://127.0.0.1:58000',
     changeOrigin: true,
   }
 }

@@ -105,7 +105,7 @@ python test_resize_by_id.py im_byJdcbCt 800 600 your_api_key_here
 ### 方法3: 使用curl
 
 ```bash
-curl -X POST http://localhost:57988/api/psd/resize/resize-by-id \
+curl -X POST http://localhost:58000/api/psd/resize/resize-by-id \
   -F "file_id=im_byJdcbCt" \
   -F "target_width=800" \
   -F "target_height=600"

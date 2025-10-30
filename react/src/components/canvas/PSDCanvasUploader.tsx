@@ -113,9 +113,9 @@ export function PSDCanvasUploader({ canvasId, onPSDUploaded }: PSDCanvasUploader
                         totalPixels++
                         // 检查是否为灰色（RGB值相近）
                         const maxDiff = Math.max(r, g, b) - Math.min(r, g, b)
-                        if (maxDiff < 20) { // RGB差值小于20认为是灰色
-                            grayPixels++
-                        }
+                        // if (maxDiff < 20) { // RGB差值小于20认为是灰色
+                        //     grayPixels++
+                        // }
                     }
                 }
 

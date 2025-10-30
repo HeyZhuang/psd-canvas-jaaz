@@ -189,7 +189,7 @@ const createWindow = (pyPort) => {
 
   // In development, use Vite dev server
   if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadURL('http://localhost:3004', {
+    mainWindow.loadURL('http://localhost:3100', {
       extraHeaders: 'pragma: no-cache\n',
     })
     mainWindow.webContents.openDevTools()
@@ -206,7 +206,7 @@ const appRoot = app.getAppPath()
 
 const startPythonApi = async () => {
   // Find an available port
-  pyPort = await findAvailablePort(57988)
+  pyPort = await findAvailablePort(58000)
   console.log('available pyPort:', pyPort)
 
   // 在某些开发情况，我们希望 python server 独立运行，那么就不通过 electron 启动
@@ -238,7 +238,7 @@ const startPythonApi = async () => {
 
   // Set BASE_API_URL based on environment
   env.BASE_API_URL =
-    process.env.NODE_ENV === 'development' ? 'http://localhost:3004' : 'https://jaaz.app'
+    process.env.NODE_ENV === 'development' ? 'http://localhost:3100' : 'https://jaaz.app'
   console.log('BASE_API_URL:', env.BASE_API_URL)
 
   // Apply proxy settings and get environment variables

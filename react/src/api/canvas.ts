@@ -110,19 +110,35 @@ export async function saveCanvas(
   }
 ): Promise<void> {
   try {
-    const response = await fetch(`/api/canvas/${id}/save`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
+    // 添加超时控制（60秒）避免大文件导致的挂起
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 60000)
 
-    if (!response.ok) {
-      // 後端返回錯誤，但不影響用戶使用
-      console.warn(`Canvas save failed (non-critical): ${response.status} ${response.statusText}`)
-      return
+    try {
+      const response = await fetch(`/api/canvas/${id}/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        // 後端返回錯誤，但不影響用戶使用
+        console.warn(`Canvas save failed (non-critical): ${response.status} ${response.statusText}`)
+        return
+      }
+
+      await response.json()
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId)
+      if (fetchError.name === 'AbortError') {
+        console.warn('Canvas save timeout (data is preserved locally)')
+        return
+      }
+      throw fetchError
     }
-
-    await response.json()
   } catch (error) {
     // 網絡錯誤或後端不可用，畫布數據仍在本地瀏覽器中
     console.warn('Canvas auto-save unavailable (data is preserved locally):', error instanceof Error ? error.message : 'Unknown error')

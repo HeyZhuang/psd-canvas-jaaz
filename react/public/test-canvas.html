@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas 调试页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .test-box {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 400px;
+        }
+
+        #dom-tree {
+            font-size: 12px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔍 Canvas 页面调试工具</h1>
+
+        <div class="test-box">
+            <h2>1. 打开 Canvas 页面</h2>
+            <button onclick="openCanvas()">打开 /canvas/default</button>
+            <button onclick="openCanvasNewTab()">在新标签页打开</button>
+        </div>
+
+        <div class="test-box">
+            <h2>2. 检查页面状态</h2>
+            <p><strong>当前页面：</strong><span id="current-url">-</span></p>
+            <p><strong>Body内容：</strong><span id="body-check">-</span></p>
+            <p><strong>Root元素：</strong><span id="root-check">-</span></p>
+            <button onclick="checkPage()">检查当前页面</button>
+        </div>
+
+        <div class="test-box">
+            <h2>3. DOM 结构检查</h2>
+            <button onclick="inspectDOM()">检查 DOM 结构</button>
+            <button onclick="checkStyles()">检查样式加载</button>
+            <div id="dom-result"></div>
+        </div>
+
+        <div class="test-box">
+            <h2>4. Console 日志</h2>
+            <button onclick="window.open('/canvas/default', '_blank')">
+                打开Canvas并查看控制台
+            </button>
+            <p style="margin-top: 10px; color: #666;">
+                提示：打开后按 F12 查看控制台是否有错误
+            </p>
+        </div>
+
+        <div class="test-box">
+            <h2>5. 手动测试</h2>
+            <p>在浏览器控制台执行以下代码：</p>
+            <pre id="manual-test">
+// 检查 React Root
+console.log('Root element:', document.getElementById('root'));
+console.log('Root children:', document.getElementById('root')?.children);
+
+// 检查 body
+console.log('Body children:', document.body.children);
+
+// 检查样式
+console.log('Stylesheets:', document.styleSheets.length);
+
+// 检查错误
+console.log('Errors:', window.lastError);
+            </pre>
+            <button onclick="copyToClipboard()">复制到剪贴板</button>
+        </div>
+    </div>
+
+    <script>
+        function openCanvas() {
+            window.location.href = '/canvas/default';
+        }
+
+        function openCanvasNewTab() {
+            window.open('/canvas/default', '_blank');
+        }
+
+        function checkPage() {
+            document.getElementById('current-url').textContent = window.location.href;
+
+            const body = document.body;
+            const bodyChildren = body.children.length;
+            document.getElementById('body-check').textContent =
+                `${bodyChildren} 个子元素 ${bodyChildren === 0 ? '❌' : '✅'}`;
+
+            const root = document.getElementById('root');
+            if (root) {
+                const rootChildren = root.children.length;
+                document.getElementById('root-check').textContent =
+                    `存在，${rootChildren} 个子元素 ${rootChildren === 0 ? '❌ 空' : '✅'}`;
+            } else {
+                document.getElementById('root-check').textContent = '❌ 不存在！';
+            }
+        }
+
+        function inspectDOM() {
+            const root = document.getElementById('root');
+            const resultDiv = document.getElementById('dom-result');
+
+            if (!root) {
+                resultDiv.innerHTML = `<pre class="error">❌ 找不到 #root 元素！</pre>`;
+                return;
+            }
+
+            function getDOMTree(element, depth = 0) {
+                let result = '  '.repeat(depth) + `<${element.tagName.toLowerCase()}`;
+
+                if (element.id) result += ` id="${element.id}"`;
+                if (element.className) result += ` class="${element.className}"`;
+
+                const style = window.getComputedStyle(element);
+                const display = style.display;
+                const visibility = style.visibility;
+                const opacity = style.opacity;
+
+                if (display === 'none') result += ' [display:none]';
+                if (visibility === 'hidden') result += ' [visibility:hidden]';
+                if (opacity === '0') result += ' [opacity:0]';
+
+                result += '>\n';
+
+                if (depth < 5) {  // 限制深度
+                    Array.from(element.children).forEach(child => {
+                        result += getDOMTree(child, depth + 1);
+                    });
+                }
+
+                return result;
+            }
+
+            const tree = getDOMTree(root);
+            resultDiv.innerHTML = `<pre id="dom-tree">${tree}</pre>`;
+        }
+
+        function checkStyles() {
+            const resultDiv = document.getElementById('dom-result');
+            let html = '<h3>样式检查结果：</h3><ul>';
+
+            html += `<li>样式表数量: ${document.styleSheets.length}</li>`;
+
+            const root = document.getElementById('root');
+            if (root) {
+                const style = window.getComputedStyle(root);
+                html += `<li>Root display: ${style.display}</li>`;
+                html += `<li>Root width: ${style.width}</li>`;
+                html += `<li>Root height: ${style.height}</li>`;
+            }
+
+            const body = document.body;
+            const bodyStyle = window.getComputedStyle(body);
+            html += `<li>Body display: ${bodyStyle.display}</li>`;
+            html += `<li>Body overflow: ${bodyStyle.overflow}</li>`;
+
+            html += '</ul>';
+            resultDiv.innerHTML = html;
+        }
+
+        function copyToClipboard() {
+            const text = document.getElementById('manual-test').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('已复制到剪贴板！');
+            });
+        }
+
+        // 页面加载时自动检查
+        window.addEventListener('load', () => {
+            setTimeout(checkPage, 500);
+        });
+    </script>
+</body>
+
+</html>
+
+
+

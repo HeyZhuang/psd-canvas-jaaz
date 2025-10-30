@@ -1,8 +1,11 @@
 import type { LLMConfig, ToolCallFunctionName } from '@/types/types'
 
 // API Configuration
+// In development mode, use empty string to proxy through Vite dev server
+// In production, use jaaz.app or custom URL from env variable
 export const BASE_API_URL =
-  import.meta.env.VITE_JAAZ_BASE_API_URL || 'https://jaaz.app'
+  import.meta.env.VITE_JAAZ_BASE_API_URL ||
+  (import.meta.env.DEV ? '' : 'https://jaaz.app')
 
 export const PROVIDER_NAME_MAPPING: {
   [key: string]: { name: string; icon: string }
@@ -44,13 +47,13 @@ export const PROVIDER_NAME_MAPPING: {
 
 // Tool call name mapping
 export const TOOL_CALL_NAME_MAPPING: { [key in ToolCallFunctionName]: string } =
-  {
-    generate_image: 'Generate Image',
-    prompt_user_multi_choice: 'Prompt Multi-Choice',
-    prompt_user_single_choice: 'Prompt Single-Choice',
-    write_plan: 'Write Plan',
-    finish: 'Finish',
-  }
+{
+  generate_image: 'Generate Image',
+  prompt_user_multi_choice: 'Prompt Multi-Choice',
+  prompt_user_single_choice: 'Prompt Single-Choice',
+  write_plan: 'Write Plan',
+  finish: 'Finish',
+}
 
 export const LOGO_URL = 'https://jaaz.app/favicon.ico'
 

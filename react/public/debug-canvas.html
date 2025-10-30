@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas 页面调试</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+
+        .section {
+            background: #252526;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 3px solid #007acc;
+        }
+
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1177bb;
+        }
+
+        .success {
+            color: #4ec9b0;
+        }
+
+        .error {
+            color: #f48771;
+        }
+
+        .warning {
+            color: #ce9178;
+        }
+
+        pre {
+            background: #1e1e1e;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔍 Canvas 页面调试工具</h1>
+
+    <div class="section">
+        <h2>快速操作</h2>
+        <button onclick="location.href='/canvas/default'">打开 Canvas</button>
+        <button onclick="clearAndReload()">清除缓存并重新加载</button>
+        <button onclick="runAllChecks()">运行所有检查</button>
+    </div>
+
+    <div class="section">
+        <h2>检查结果</h2>
+        <div id="results"></div>
+    </div>
+
+    <div class="section">
+        <h2>DOM 结构</h2>
+        <div id="dom-structure"></div>
+    </div>
+
+    <script>
+        function clearAndReload() {
+            localStorage.clear();
+            sessionStorage.clear();
+            console.log('缓存已清除');
+            alert('缓存已清除，即将重新加载...');
+            location.reload(true);
+        }
+
+        async function runAllChecks() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>正在检查...</p>';
+
+            let html = '';
+
+            // 检查1: 前端服务
+            html += '<h3>1. 前端服务检查</h3>';
+            try {
+                const res = await fetch('/');
+                if (res.ok) {
+                    html += `<p class="success">✅ 前端服务正常 (状态: ${res.status})</p>`;
+                } else {
+                    html += `<p class="error">❌ 前端服务异常 (状态: ${res.status})</p>`;
+                }
+            } catch (e) {
+                html += `<p class="error">❌ 前端服务连接失败: ${e.message}</p>`;
+            }
+
+            // 检查2: 后端API
+            html += '<h3>2. 后端API检查</h3>';
+            try {
+                const res = await fetch('/api/config');
+                if (res.ok) {
+                    html += `<p class="success">✅ 后端API正常 (状态: ${res.status})</p>`;
+                } else {
+                    html += `<p class="error">❌ 后端API异常 (状态: ${res.status})</p>`;
+                }
+            } catch (e) {
+                html += `<p class="error">❌ 后端API连接失败: ${e.message}</p>`;
+            }
+
+            // 检查3: Canvas API
+            html += '<h3>3. Canvas API检查</h3>';
+            try {
+                const res = await fetch('/api/canvas/default');
+                if (res.ok) {
+                    const data = await res.json();
+                    html += `<p class="success">✅ Canvas API正常</p>`;
+                    html += `<p>画布名称: ${data.name || '未知'}</p>`;
+                    html += `<p>会话数: ${data.sessions?.length || 0}</p>`;
+                } else {
+                    html += `<p class="error">❌ Canvas API异常 (状态: ${res.status})</p>`;
+                }
+            } catch (e) {
+                html += `<p class="error">❌ Canvas API请求失败: ${e.message}</p>`;
+            }
+
+            // 检查4: localStorage
+            html += '<h3>4. LocalStorage检查</h3>';
+            const token = localStorage.getItem('jaaz_access_token');
+            const user = localStorage.getItem('jaaz_user_info');
+            html += `<p>Token: ${token ? '<span class="warning">存在（可能导致问题）</span>' : '<span class="success">不存在</span>'}</p>`;
+            html += `<p>User Info: ${user ? '<span class="warning">存在</span>' : '<span class="success">不存在</span>'}</p>`;
+            if (token || user) {
+                html += '<p class="warning">⚠️ 建议清除localStorage后重试</p>';
+                html += '<button onclick="clearAndReload()">立即清除</button>';
+            }
+
+            // 检查5: 样式加载
+            html += '<h3>5. 样式加载检查</h3>';
+            html += `<p>样式表数量: ${document.styleSheets.length}</p>`;
+            if (document.styleSheets.length === 0) {
+                html += '<p class="error">❌ 没有加载任何样式表！</p>';
+            } else {
+                html += '<p class="success">✅ 样式表已加载</p>';
+            }
+
+            results.innerHTML = html;
+
+            // 检查DOM
+            checkDOM();
+        }
+
+        function checkDOM() {
+            const domDiv = document.getElementById('dom-structure');
+            const root = document.getElementById('root');
+
+            if (!root) {
+                domDiv.innerHTML = '<p class="error">❌ 找不到 #root 元素！</p>';
+                return;
+            }
+
+            let html = '<h3>DOM 树</h3>';
+            html += `<p>Root 子元素数: ${root.children.length}</p>`;
+            html += `<p>Root innerHTML 长度: ${root.innerHTML.length}</p>`;
+
+            if (root.children.length === 0) {
+                html += '<p class="error">❌ #root 是空的！React应用可能未渲染</p>';
+                html += '<p class="warning">可能原因：</p>';
+                html += '<ul>';
+                html += '<li>JavaScript错误阻止了渲染</li>';
+                html += '<li>Provider初始化失败</li>';
+                html += '<li>main.tsx加载失败</li>';
+                html += '</ul>';
+            } else {
+                html += '<p class="success">✅ #root 有内容</p>';
+
+                // 检查样式
+                const style = window.getComputedStyle(root);
+                html += `<p>Display: ${style.display}</p>`;
+                html += `<p>Opacity: ${style.opacity}</p>`;
+                html += `<p>Visibility: ${style.visibility}</p>`;
+
+                if (style.display === 'none') {
+                    html += '<p class="error">❌ Root被隐藏了！(display: none)</p>';
+                } else if (style.opacity === '0') {
+                    html += '<p class="error">❌ Root透明度为0！</p>';
+                } else if (style.visibility === 'hidden') {
+                    html += '<p class="error">❌ Root不可见！(visibility: hidden)</p>';
+                }
+
+                // 显示前3层DOM结构
+                html += '<pre>';
+                html += getDOMTree(root, 0, 3);
+                html += '</pre>';
+            }
+
+            domDiv.innerHTML = html;
+        }
+
+        function getDOMTree(element, depth, maxDepth) {
+            if (depth > maxDepth) return '';
+
+            const indent = '  '.repeat(depth);
+            let result = indent + `<${element.tagName.toLowerCase()}`;
+
+            if (element.id) result += ` id="${element.id}"`;
+            if (element.className) result += ` class="${element.className.substring(0, 50)}${element.className.length > 50 ? '...' : ''}"`;
+
+            result += `>\n`;
+
+            if (element.children.length > 0) {
+                for (let i = 0; i < Math.min(element.children.length, 5); i++) {
+                    result += getDOMTree(element.children[i], depth + 1, maxDepth);
+                }
+                if (element.children.length > 5) {
+                    result += indent + `  ... (${element.children.length - 5} more)\n`;
+                }
+            }
+
+            return result;
+        }
+
+        // 页面加载时自动运行检查
+        window.addEventListener('load', () => {
+            setTimeout(runAllChecks, 500);
+        });
+    </script>
+</body>
+
+</html>
+
+
+

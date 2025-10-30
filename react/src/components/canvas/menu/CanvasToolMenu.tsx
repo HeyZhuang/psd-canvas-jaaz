@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, Download, AlertCircle } from 'lucide-react'
+import { PSDResizeDialog } from '../PSDResizeDialog'
 
 interface CanvasToolMenuProps {
   canvasId: string
@@ -42,7 +43,8 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
   const [lastUpdateTime, setLastUpdateTime] = useState<number>(0)
 
   // Resize功能相关状态
-  const [showResizeTool, setShowResizeTool] = useState(false)
+  const [showResizeDialog, setShowResizeDialog] = useState(false) // 新的对话框状态
+  const [showResizeTool, setShowResizeTool] = useState(false) // 保留旧的侧边栏（可选）
   const [targetWidth, setTargetWidth] = useState<number>(800)
   const [targetHeight, setTargetHeight] = useState<number>(600)
   const [apiKey, setApiKey] = useState<string>('')
@@ -391,12 +393,12 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
         original_size: { width: psdData.width, height: psdData.height }
       })
 
-      // 增加超时时间到5分钟（300秒），并添加更好的错误处理
+      // 增加超时时间到10分钟（600秒），并添加更好的错误处理
       const controller = new AbortController()
       const timeoutId = setTimeout(() => {
         controller.abort()
         console.warn('请求超时，已取消')
-      }, 300000) // 300秒超时
+      }, 600000) // 600秒超时（10分钟）
 
       try {
         // 检查API端点是否可访问
@@ -452,7 +454,7 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
         clearTimeout(timeoutId)
 
         if (fetchError.name === 'AbortError') {
-          throw new Error('处理超时（超过5分钟）。可能原因：\n1. Gemini API响应慢\n2. 图层数量过多\n3. 网络连接问题\n4. 后端服务器未运行\n\n请稍后重试或减少图层数量。')
+          throw new Error('处理超时（超过10分钟）。可能原因：\n1. Gemini API响应慢或配额限制\n2. 图层数量过多（建议<20层）\n3. 网络连接问题\n4. 后端服务器未运行或负载过高\n\n建议：\n• 等待几分钟后重试\n• 简化PSD图层结构\n• 检查Gemini API配额状态')
         }
 
         // 处理网络错误
@@ -595,7 +597,7 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setShowResizeTool(!showResizeTool)}
+          onClick={() => setShowResizeDialog(!showResizeDialog)}
           className="h-9 w-9 p-2 flex flex-col items-center gap-1"
           title="智能缩放"
           disabled={!psdData}
@@ -1005,6 +1007,13 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
         onClose={() => setShowFontSelector(false)}
         currentFont={currentFont}
         onFontSelect={handleFontSelect}
+      />
+
+      {/* PSD智能缩放对话框 */}
+      <PSDResizeDialog
+        psdData={psdData}
+        isOpen={showResizeDialog}
+        onClose={() => setShowResizeDialog(false)}
       />
 
     </>

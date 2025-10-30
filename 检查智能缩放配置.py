@@ -11,7 +11,7 @@ def check_backend_server():
     """检查后端服务器"""
     print("🔍 1. 检查后端服务器...")
     try:
-        response = requests.get("http://127.0.0.1:57988/api/psd/resize/health", timeout=5)
+        response = requests.get("http://127.0.0.1:58000/api/psd/resize/health", timeout=5)
         if response.status_code == 200:
             print("   ✅ 后端服务器运行正常")
             return True
@@ -26,7 +26,7 @@ def check_frontend_proxy():
     """检查前端代理"""
     print("\n🔍 2. 检查前端代理...")
     try:
-        response = requests.get("http://localhost:3004/api/psd/resize/health", timeout=5)
+        response = requests.get("http://localhost:3100/api/psd/resize/health", timeout=5)
         if response.status_code == 200:
             print("   ✅ 前端代理配置正确")
             return True
@@ -103,7 +103,7 @@ def test_resize_api():
             # 注意：这只是测试连接，不会真正执行缩放（因为需要 API 密钥）
             try:
                 response = requests.post(
-                    "http://127.0.0.1:57988/api/psd/resize/resize-by-id",
+                    "http://127.0.0.1:58000/api/psd/resize/resize-by-id",
                     data={
                         "file_id": file_id,
                         "target_width": 800,

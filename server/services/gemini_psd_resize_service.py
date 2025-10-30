@@ -24,12 +24,13 @@ logger = logging.getLogger(__name__)
 class GeminiPSDResizeService:
     """Gemini PSD自動縮放服務類"""
     
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, model_name: Optional[str] = None):
         """
         初始化服務
         
         Args:
             api_key: Gemini API密鑰，如果不提供則從環境變量或配置文件讀取
+            model_name: 模型名稱，默認使用 gemini-2.5-pro，可選 gemini-1.5-flash（更快但可能效果稍差）
         """
         self.api_key = api_key or self._load_api_key_from_config()
         if not self.api_key:
@@ -37,17 +38,24 @@ class GeminiPSDResizeService:
         
         # 设置API密钥和初始化客户端
         os.environ["GOOGLE_API_KEY"] = self.api_key
-        self.model_name = "gemini-2.5-pro"  # 使用Gemini 2.5 Pro模型
+        # 支持模型选择：gemini-2.5-pro（更好质量）或 gemini-1.5-flash（更快速度）
+        self.model_name = model_name or os.environ.get("GEMINI_MODEL", "gemini-2.5-pro")
+        logger.info(f"使用模型: {self.model_name}")
         
         # 初始化客户端
         try:
             # 尝试使用新版 google-genai SDK
             self.client = genai.Client(api_key=self.api_key)
             self.use_new_sdk = True
+            self.genai_old = None
             logger.info("使用 google-genai SDK (新版)")
-        except (AttributeError, TypeError):
+        except (AttributeError, TypeError) as e:
             # 回退到旧版 google-generativeai
-            genai.configure(api_key=self.api_key)
+            logger.info(f"新版SDK初始化失败 ({e})，回退到旧版SDK")
+            # 重新导入旧版SDK以确保使用正确的API
+            import google.generativeai as genai_old
+            self.genai_old = genai_old  # 先保存引用
+            genai_old.configure(api_key=self.api_key)
             self.client = None
             self.use_new_sdk = False
             logger.info("使用 google-generativeai SDK (旧版)")
@@ -253,9 +261,10 @@ class GeminiPSDResizeService:
                             image_base64: str,
                             temperature: float = 0.1,
                             max_tokens: int = 32000,
-                            max_retries: int = 3) -> str:
+                            max_retries: int = 3,
+                            timeout: int = 480) -> str:
         """
-        調用Gemini API（带重试机制）
+        調用Gemini API（带重试机制和超时控制）
         
         Args:
             prompt: 提示詞
@@ -263,6 +272,7 @@ class GeminiPSDResizeService:
             temperature: 溫度參數
             max_tokens: 最大輸出token數
             max_retries: 最大重试次数（针对配额错误）
+            timeout: API调用超时时间（秒），默认480秒（8分钟）
             
         Returns:
             API響應文本
@@ -280,38 +290,46 @@ class GeminiPSDResizeService:
                 image_data = base64.b64decode(image_base64)
                 image = Image.open(BytesIO(image_data))
                 
-                if self.use_new_sdk and self.client:
-                    # 使用新版 google-genai SDK
-                    logger.info("使用新版SDK調用Gemini API")
-                    
-                    response = self.client.models.generate_content(
-                        model=self.model_name,
-                        contents=[prompt, image],
-                        config=types.GenerateContentConfig(
-                            temperature=temperature,
-                            max_output_tokens=max_tokens,
-                            response_modalities=["Text"]
+                async def _make_api_call():
+                    if self.use_new_sdk and self.client:
+                        # 使用新版 google-genai SDK
+                        logger.info(f"使用新版SDK調用Gemini API (超时: {timeout}秒)")
+                        
+                        response = self.client.models.generate_content(
+                            model=self.model_name,
+                            contents=[prompt, image],
+                            config=types.GenerateContentConfig(
+                                temperature=temperature,
+                                max_output_tokens=max_tokens,
+                                response_modalities=["Text"]
+                            )
                         )
-                    )
-                    
-                    # 提取响应文本
-                    return response.candidates[0].content.parts[0].text
-                else:
-                    # 使用旧版 google-generativeai SDK
-                    logger.info("使用旧版SDK調用Gemini API")
-                    
-                    model = genai.GenerativeModel(self.model_name)
-                    
-                    # 生成內容
-                    response = model.generate_content(
-                        [prompt, image],
-                        generation_config={
-                            "temperature": temperature,
-                            "max_output_tokens": max_tokens,
-                        }
-                    )
-                    
-                    return response.text
+                        
+                        # 提取响应文本
+                        return response.candidates[0].content.parts[0].text
+                    else:
+                        # 使用旧版 google-generativeai SDK
+                        logger.info(f"使用旧版SDK調用Gemini API (超时: {timeout}秒)")
+                        
+                        model = self.genai_old.GenerativeModel(self.model_name)
+                        
+                        # 生成內容
+                        response = model.generate_content(
+                            [prompt, image],
+                            generation_config={
+                                "temperature": temperature,
+                                "max_output_tokens": max_tokens,
+                            }
+                        )
+                        
+                        return response.text
+                
+                # 使用asyncio.wait_for添加超时控制
+                try:
+                    result = await asyncio.wait_for(_make_api_call(), timeout=timeout)
+                    return result
+                except asyncio.TimeoutError:
+                    raise Exception(f"Gemini API调用超时（超过{timeout}秒）。建议：减少图层数量或稍后重试。")
                 
             except Exception as e:
                 error_str = str(e)
@@ -325,10 +343,19 @@ class GeminiPSDResizeService:
                     'rate limit' in error_str.lower()
                 )
                 
-                if is_quota_error and attempt < max_retries - 1:
+                # 检查是否是服务过载错误
+                is_overload_error = (
+                    '503' in error_str or
+                    'UNAVAILABLE' in error_str or
+                    'overloaded' in error_str.lower() or
+                    'temporarily unavailable' in error_str.lower()
+                )
+                
+                if (is_quota_error or is_overload_error) and attempt < max_retries - 1:
                     # 指数退避重试
                     wait_time = (2 ** attempt) * 5  # 5秒, 10秒, 20秒...
-                    logger.warning(f"配额限制错误，{wait_time}秒后进行第{attempt + 2}次重试...")
+                    error_type_msg = "服务过载" if is_overload_error else "配额限制"
+                    logger.warning(f"{error_type_msg}错误，{wait_time}秒后进行第{attempt + 2}次重试...")
                     await asyncio.sleep(wait_time)
                     continue
                 
@@ -345,6 +372,18 @@ class GeminiPSDResizeService:
                         f"1. 等待一段时间后重试\n"
                         f"2. 访问 https://ai.dev/usage?tab=rate-limit 查看配额使用情况\n"
                         f"3. 考虑升级到付费计划以获得更高配额\n"
+                        f"原始错误: {error_str}"
+                    )
+                
+                if is_overload_error:
+                    raise Exception(
+                        f"Gemini API 服务暂时过载。\n"
+                        f"这是Google服务端的暂时性问题。\n"
+                        f"解决方案：\n"
+                        f"1. 等待 1-2 分钟后重试（推荐）\n"
+                        f"2. 使用更快的模型 gemini-1.5-flash（可能效果稍差）\n"
+                        f"3. 避开使用高峰时段\n"
+                        f"4. 访问 https://status.cloud.google.com/ 查看服务状态\n"
                         f"原始错误: {error_str}"
                     )
                 

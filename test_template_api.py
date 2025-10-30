@@ -3,7 +3,7 @@ import requests
 import json
 
 # Test the template API endpoints
-BASE_URL = "http://localhost:57988/api/templates"
+BASE_URL = "http://localhost:58000/api/templates"
 
 def test_endpoint(endpoint, method="GET", data=None):
     url = f"{BASE_URL}{endpoint}"

@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # ============ 配置区 ============
-PROJECT_DIR="$HOME/ckz/psd-canvas-jaaz/server"
-VENV_DIR="$PROJECT_DIR/server/venv"
+PROJECT_DIR="/home/ubuntu/jaaz/server"
+VENV_DIR="$PROJECT_DIR/venv"
 REQUIREMENTS_FILE="$PROJECT_DIR/requirements.txt"
-MAIN_SCRIPT="$PROJECT_DIR/server/main.py"
+MAIN_SCRIPT="$PROJECT_DIR/main.py"
 # ================================
 
 # 进入项目目录

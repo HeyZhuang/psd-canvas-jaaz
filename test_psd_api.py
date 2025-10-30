@@ -13,7 +13,7 @@ def test_psd_api():
     print("=" * 60)
     
     # 测试不同的端口
-    ports = [8000, 3000, 5000, 57988, 8080]
+    ports = [8000, 3000, 5000, 58000, 8080]
     file_id = "im_HRmLZeX7"
     
     print(f"\n测试文件ID: {file_id}")
@@ -154,7 +154,7 @@ def main():
         print(f"✅ API端点可访问 - 端口: {port}")
         print(f"   正确的URL: {url}")
         print("\n💡 修复建议:")
-        print(f"   前端应该使用端口 {port} 而不是 57988")
+        print(f"   前端应该使用端口 {port} 而不是 58000")
         print(f"   或在vite.config.ts中配置proxy指向端口 {port}")
     else:
         print("❌ 无法访问API端点")

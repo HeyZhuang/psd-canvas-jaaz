@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 # 配置
-API_BASE_URL = "http://localhost:57988"
+API_BASE_URL = "http://localhost:58000"
 RESIZE_BY_ID_ENDPOINT = f"{API_BASE_URL}/api/psd/resize/resize-by-id"
 FILE_ENDPOINT = f"{API_BASE_URL}/api/psd/file"
 

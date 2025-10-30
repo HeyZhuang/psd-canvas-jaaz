@@ -42,18 +42,18 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         if (!socketManagerRef.current) {
           socketManagerRef.current = new SocketIOManager({
             serverUrl: process.env.NODE_ENV === 'development'
-              ? 'http://localhost:57988'
+              ? 'http://localhost:58000'
               : window.location.origin,
             autoConnect: false
           })
         }
 
         const socketManager = socketManagerRef.current
-        
+
         // 嘗試連接，但不阻塞應用運行
         try {
           await socketManager.connect()
-          
+
           if (mounted) {
             setConnected(true)
             setSocketId(socketManager.getSocketId())

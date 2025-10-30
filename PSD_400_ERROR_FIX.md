@@ -4,7 +4,7 @@
 
 用户点击"开始智能缩放"按钮后，前端发出请求：
 ```
-http://localhost:57988/api/psd/file/im_HRmLZeX7
+http://localhost:58000/api/psd/file/im_HRmLZeX7
 ```
 
 返回**400状态码**，前端报错："下载PSD文件失败"。
@@ -22,7 +22,7 @@ d:\project-three\jaaz-psd-main\jaaz-psd-main\server\user_data\files\psd\im_HRmLZ
 ### ⚠️ 可能的原因
 
 1. **端口不匹配**
-   - 前端请求：`localhost:57988`
+   - 前端请求：`localhost:58000`
    - 后端服务器可能运行在其他端口（如8000、3000等）
    
 2. **路由问题**
@@ -99,7 +99,7 @@ async def get_psd_file(file_id: str):
 # INFO:     Uvicorn running on http://127.0.0.1:8000
 ```
 
-**如果端口不是57988，需要修改前端请求的URL或配置代理。**
+**如果端口不是58000，需要修改前端请求的URL或配置代理。**
 
 ### 修复3: 前端URL修复
 
@@ -112,7 +112,7 @@ async def get_psd_file(file_id: str):
 **示例修复** (如果需要):
 ```typescript
 // 确保URL使用正确的端口
-const psdUrl = psdData.url.replace('localhost:57988', 'localhost:8000')
+const psdUrl = psdData.url.replace('localhost:58000', 'localhost:8000')
 ```
 
 ### 修复4: 配置代理（推荐）
@@ -198,7 +198,7 @@ import requests
 import os
 
 # 测试API端点
-ports = [8000, 3000, 5000, 57988]  # 可能的端口
+ports = [8000, 3000, 5000, 58000]  # 可能的端口
 file_id = "im_HRmLZeX7"
 
 for port in ports:

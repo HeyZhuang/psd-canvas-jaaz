@@ -260,19 +260,19 @@ logger.info(f"开始处理PSD文件: {file_id}, 大小: {file_size_mb:.2f} MB")
 ### 测试用例
 ```bash
 # 1. 测试小文件（<10MB）
-curl -X POST http://localhost:57988/api/psd/resize/resize-by-id \
+curl -X POST http://localhost:58000/api/psd/resize/resize-by-id \
   -F "file_id=im_small123" \
   -F "target_width=800" \
   -F "target_height=600"
 
 # 2. 测试大文件（68MB+）
-curl -X POST http://localhost:57988/api/psd/resize/resize-by-id \
+curl -X POST http://localhost:58000/api/psd/resize/resize-by-id \
   -F "file_id=im_byJdcbCt" \
   -F "target_width=1920" \
   -F "target_height=1080"
 
 # 3. 测试文件不存在
-curl -X POST http://localhost:57988/api/psd/resize/resize-by-id \
+curl -X POST http://localhost:58000/api/psd/resize/resize-by-id \
   -F "file_id=nonexistent" \
   -F "target_width=800" \
   -F "target_height=600"

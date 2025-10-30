@@ -32,9 +32,9 @@
 ### 网络连接状态
 
 ```
-TCP    127.0.0.1:57988    LISTENING       # 服务器正常运行
-TCP    127.0.0.1:57988    CLOSE_WAIT      # 多个连接处于关闭等待状态
-TCP    127.0.0.1:57988    FIN_WAIT_2      # 多个连接处于结束等待状态
+TCP    127.0.0.1:58000    LISTENING       # 服务器正常运行
+TCP    127.0.0.1:58000    CLOSE_WAIT      # 多个连接处于关闭等待状态
+TCP    127.0.0.1:58000    FIN_WAIT_2      # 多个连接处于结束等待状态
 ```
 
 这些 CLOSE_WAIT 和 FIN_WAIT_2 状态表明有很多连接因超时而异常关闭。
@@ -192,13 +192,13 @@ Socket.IO 超时是**症状**，不是**原因**。修复 HTTP 超时后，Socke
 
 ```bash
 # 1. 测试小文件（图层少，应该 < 30秒）
-curl -X POST http://localhost:57988/api/psd/resize/resize-by-id \
+curl -X POST http://localhost:58000/api/psd/resize/resize-by-id \
   -F "file_id=im_small123" \
   -F "target_width=800" \
   -F "target_height=600"
 
 # 2. 测试大文件（图层多，可能需要 60-120秒）
-curl -X POST http://localhost:57988/api/psd/resize/resize-by-id \
+curl -X POST http://localhost:58000/api/psd/resize/resize-by-id \
   -F "file_id=im_nCMlflGr" \
   -F "target_width=800" \
   -F "target_height=600"

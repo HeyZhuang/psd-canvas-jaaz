@@ -12,8 +12,8 @@ import sys
 import json
 import re
 from pathlib import Path
-import google.generativeai as genai
-from google.generativeai import types
+from google import genai
+from google.genai import types
 
 # 导入现有的模块
 from psd_layer_info import get_psd_layers_info, draw_detection_boxes, print_layers_info
