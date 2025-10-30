@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # ============ 配置区 ============
-PROJECT_DIR="$HOME/ckz/psd-canvas-jaaz/server"
-VENV_DIR="$PROJECT_DIR/server/venv"
+PROJECT_DIR="/d/lhx/university/psd-canvas-jaaz/server"
+VENV_DIR="$PROJECT_DIR/venv"
 REQUIREMENTS_FILE="$PROJECT_DIR/requirements.txt"
 MAIN_SCRIPT="$PROJECT_DIR/main.py"          # 正确路径！去掉了多余的 server/
 # ================================

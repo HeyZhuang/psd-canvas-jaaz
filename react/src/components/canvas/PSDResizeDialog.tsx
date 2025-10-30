@@ -182,7 +182,6 @@ export function PSDResizeDialog({ psdData, isOpen, onClose }: PSDResizeDialogPro
                     body: formData,
                     signal: controller.signal,
                 })
-
                 clearTimeout(timeoutId)
 
                 if (!resizeResponse.ok) {
