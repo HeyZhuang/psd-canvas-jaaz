@@ -23,6 +23,7 @@ import {
 import { useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { VideoElement } from './VideoElement'
+import { CanvasTopToolbar } from './toolbar/CanvasTopToolbar'
 
 import '@/assets/style/canvas.css'
 
@@ -106,7 +107,7 @@ const CanvasExcali: React.FC<CanvasExcaliProps> = ({
 
       saveCanvas(canvasId, { data, thumbnail })
     },
-    1000
+    300
   )
 
   // Combined handler that calls both immediate and debounced functions
@@ -396,45 +397,52 @@ const CanvasExcali: React.FC<CanvasExcaliProps> = ({
   }, [handleImageGenerated, handleVideoGenerated])
 
   return (
-    <Excalidraw
-      theme={customTheme as Theme}
-      langCode={i18n.language}
-      excalidrawAPI={(api) => {
-        console.log('👇 Excalidraw API 实例:', api)
-        setExcalidrawAPI(api)
-      }}
-      onChange={handleChange}
-      initialData={() => {
-        const data = initialData
-        console.log('👇initialData', data)
-        if (data?.appState) {
-          data.appState = {
-            ...data.appState,
-            collaborators: undefined!,
+    <div className="relative w-full h-full">
+      <Excalidraw
+        theme={customTheme as Theme}
+        langCode={i18n.language}
+        excalidrawAPI={(api) => {
+          console.log('👇 Excalidraw API 实例:', api)
+          setExcalidrawAPI(api)
+        }}
+        onChange={handleChange}
+        initialData={() => {
+          const data = initialData
+          console.log('👇initialData', data)
+          if (data?.appState) {
+            data.appState = {
+              ...data.appState,
+              collaborators: undefined!,
+            }
           }
-        }
-        return data || null
-      }}
-      renderEmbeddable={renderEmbeddable}
-      // Allow all URLs for embeddable content
-      validateEmbeddable={(url: string) => {
-        console.log('👇 Validating embeddable URL:', url)
-        // Allow all URLs - return true for everything
-        return true
-      }}
-      // Ensure interactive mode is enabled
-      viewModeEnabled={false}
-      zenModeEnabled={false}
-      // Allow element manipulation
-      onPointerUpdate={(payload) => {
-        // Minimal logging - only log significant pointer events
-        if (payload.button === 'down' && Math.random() < 0.05) {
-          // console.log('👇 Pointer down on:', payload.pointer.x, payload.pointer.y)
-        }
-      }}
-    />
+          return data || null
+        }}
+        renderEmbeddable={renderEmbeddable}
+        // Allow all URLs for embeddable content
+        validateEmbeddable={(url: string) => {
+          console.log('👇 Validating embeddable URL:', url)
+          // Allow all URLs - return true for everything
+          return true
+        }}
+        // Ensure interactive mode is enabled
+        viewModeEnabled={false}
+        zenModeEnabled={false}
+        // Allow element manipulation
+        onPointerUpdate={(payload) => {
+          // Minimal logging - only log significant pointer events
+          if (payload.button === 'down' && Math.random() < 0.05) {
+            // console.log('👇 Pointer down on:', payload.pointer.x, payload.pointer.y)
+          }
+        }}
+      />
+      <CanvasTopToolbar />
+    </div>
   )
 }
 
 export { CanvasExcali }
 export default CanvasExcali
+
+
+
+

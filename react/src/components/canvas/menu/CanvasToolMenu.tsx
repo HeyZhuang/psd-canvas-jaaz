@@ -634,7 +634,7 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
               // 切换上传菜单的显示状态
               setShowUploadMenu(!showUploadMenu);
             }}
-            className="h-14 w-14 p-0 rounded-full bg-primary hover:bg-primary/90 text-white"
+            className="h-14 w-14 p-0 rounded-full bg-[#1e1e1e] hover:bg-primary text-white border border-gray-700 hover:bg-primary"
           />
 
           {showUploadMenu && (
@@ -1217,5 +1217,7 @@ const CanvasToolMenu = ({ canvasId }: CanvasToolMenuProps) => {
 }
 
 export default CanvasToolMenu
+
+
 
 

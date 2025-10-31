@@ -1,133 +1,19 @@
-移除隐藏形状选择部分的规则
-/* .excalidraw .shapes-section {
-  display: none !important;
-} */
-
-/* 移除隐藏Excalidraw自带的原生弹框工具栏的规则 */
-/* .excalidraw .excalidraw-contextMenu {
-  display: none !important;
-} */
-
-/* 移除隐藏选中元素时弹出的属性工具栏的规则 */
-/* .excalidraw .ToolIcon__floating {
-  display: none !important;
-} */
-
-/* 移除隐藏浮动工具栏容器的规则 */
-/* .excalidraw .layer-ui__wrapper__footer-center {
-  display: none !important;
-} */
-
-/* 移除隐藏选中元素时的快捷操作栏的规则 */
-/* .excalidraw .App-menu_bottom__left {
-  display: none !important;
-} */
-
-/* 移除隐藏形状属性栏（描边、字体等）的规则 */
-/* .excalidraw .excalidraw-floating-toolbar {
-  display: none !important;
-} */
-
-/* 移除隐藏所有弹出的属性面板的规则 */
-/* .excalidraw .popover.popover--align-start {
-  display: none !important;
-} */
-
-/* 移除隐藏工具栏中的颜色选择器等弹出面板的规则 */
-/* .excalidraw .color-picker-popover {
-  display: none !important;
-} */
-
-/* 移除隐藏文字工具的字体选择面板的规则 */
-/* .excalidraw .text-properties {
-  display: none !important;
-} */
-
-/* 移除隐藏点击工具栏按钮时的所有弹出层的规则 */
-/* .excalidraw .Island {
-  display: none !important;
-} */
-
-/* 但保留主菜单栏 */
-/* .excalidraw .App-menu__left .Island {
-  display: flex !important;
-} */
-
-/* 移除隐藏底部工具栏中的所有弹出内容的规则 */
-/* .excalidraw .App-menu_bottom .Island {
-  display: none !important;
-} */
-
-/* 移除隐藏所有工具提示和浮动选项的规则 */
-/* .excalidraw [role="dialog"] {
-  display: none !important;
-} */
-
-/* 移除隐藏形状库面板的规则 */
-/* .excalidraw .library-menu-items-container {
-  display: none !important;
-} */
-
-/* Conditionally hide left toolbar panel when embeddable is selected */
-/* .excalidraw.hide-left-panel .App-menu__left {
-  display: none !important;
-} */
-
 /* 
-/* 自定义工具栏样式 */
-.excalidraw-custom {
-  /* 调整整体布局 */
-  /* .excalidraw .App-menu_top {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 60px;
-    background: var(--bg-color);
-    border-bottom: 1px solid var(--border-color);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-  } */
+ * Excalidraw 画布样式定制文件
+ * 该文件用于覆盖 Excalidraw 默认样式，实现自定义的 UI 布局
+ */
 
-  /* 隐藏原来的侧边工具栏 */
-  /* .excalidraw .App-toolbar {
-    display: none !important;
-  } */
-
-  /* 调整画布位置，为顶部工具栏留出空间 */
-  /* .excalidraw .excalidraw-container {
-    margin-top: 60px;
-    height: calc(100vh - 60px) !important;
-  } */
-
-  /* 工具栏内容水平排列 */
-  /* .excalidraw .App-menu_top .Stack {
-    flex-direction: row;
-    gap: 8px;
-  } */
-
-  /* 工具栏按钮样式调整 */
-  /* .excalidraw .App-menu_top .ToolIcon {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-  } */
-
-  /* 颜色选择器调整 */
-  /* .excalidraw .App-menu_top .color-picker-container {
-    position: relative;
-    display: inline-block;
-  } */
-
-  /* 确保弹出菜单正确显示 */
-  /* .excalidraw .popover {
-    z-index: 1001;
-  } */
+/* 隐藏形状选择部分 */
+.excalidraw .shapes-section {
+  display: none !important;
 }
 
-/* Video overlay styles */
+/* 当选中可嵌入元素时，条件性隐藏左侧工具栏面板 */
+.excalidraw.hide-left-panel .App-menu__left {
+  display: none !important;
+}
+
+/* 视频覆盖层样式 */
 .video-overlay {
   position: absolute;
   top: 0;
@@ -143,25 +29,67 @@
   pointer-events: auto;
 }
 
-/* 隐藏顶部工具栏 */
+/* 隐藏顶部左侧菜单中的特定堆叠元素 */
+.excalidraw .Stack.Stack_vertical.App-menu_top__left>div {
+  display: none !important;
+}
+
+/* 隐藏工具图标上的快捷键显示 */
+.ToolIcon__keybinding {
+  display: none !important;
+}
+
+/* 隐藏激光工具后的分隔线 */
+.excalidraw .dropdown-menu .dropdown-menu-item[data-testid='toolbar-laser']+div {
+  display: none !important;
+}
+
+/* 隐藏右上角的层 UI 包装器 */
+.excalidraw .layer-ui__wrapper__top-right {
+  display: none !important;
+}
+
+/* 隐藏顶部固定侧边栏 */
 .excalidraw .FixedSideContainer.FixedSideContainer_side_top.App-top-bar {
   display: none !important;
 }
 
-/* 移除隐藏底部工具栏的规则 */
-/* .excalidraw .layer-ui__wrapper__footer.App-menu.App-menu_bottom {
+/* 隐藏底部菜单 */
+.excalidraw .layer-ui__wrapper__footer.App-menu.App-menu_bottom {
   display: none !important;
-} */
+}
 
-/* 移除隐藏底部栏的规则 */
-/* .excalidraw .App-bottom-bar {
+/* 隐藏底部栏 */
+.excalidraw .App-bottom-bar {
   display: none !important;
-} */
+}
 
+/* 隐藏所有默认工具栏 */
+.excalidraw .App-toolbar {
+  display: none !important;
+}
+
+/* 隐藏顶部菜单 */
+.excalidraw .App-menu_top {
+  display: none !important;
+}
+
+/* 隐藏左侧菜单 */
+.excalidraw .App-menu_left {
+  display: none !important;
+}
+
+/* 隐藏右侧菜单 */
+.excalidraw .App-menu_right {
+  display: none !important;
+}
+
+/* 滚动回到内容按钮的位置调整 */
 .scroll-back-to-content {
   bottom: 80px !important;
 }
 
+/* 提高弹出框的 z-index */
 .excalidraw .popover {
   z-index: 60 !important;
 }
@@ -177,6 +105,7 @@
   z-index: inherit !important;
 }
 
+/* 弹出菜单样式定制 */
 .excalidraw .popover .context-menu {
   border-radius: 10px !important;
   border-color: color-mix(in oklab, var(--primary) 10%, transparent) !important;
@@ -304,9 +233,9 @@
 }
 
 /* 字体选择功能样式 */
-/* .excalidraw {
+.excalidraw {
   font-family: var(--excalidraw-font-family, 'Arial') !important;
-} */
+}
 
 /* 确保文本元素使用选择的字体 */
 .excalidraw .excalidraw-element[data-type="text"] {
