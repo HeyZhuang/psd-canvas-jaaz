@@ -1,8 +1,8 @@
-// import { useState, useCallback } from 'react'
+// import { useCallback, useState } from 'react'
+// import { useCanvas } from '@/contexts/canvas'
 // import { Button } from '@/components/ui/button'
 // import { Separator } from '@/components/ui/separator'
 // import { Input } from '@/components/ui/input'
-// import { useCanvas } from '@/contexts/canvas'
 // import {
 //   Layers,
 //   Merge,
@@ -23,7 +23,7 @@
 //   DropdownMenuSeparator,
 // } from '@/components/ui/dropdown-menu'
 
-// export function GroupToolbar() {
+// export function ExcalidrawCustomToolbar() {
 //   const { excalidrawAPI } = useCanvas()
 //   const [showAlignMenu, setShowAlignMenu] = useState(false)
 //   const [showResizeMenu, setShowResizeMenu] = useState(false)
@@ -247,7 +247,7 @@
 //         <span className="text-xs">Group</span>
 //       </Button>
 
-//       {/* Merge按钮 */}
+//       {/* Ungroup按钮 */}
 //       <Button
 //         variant="ghost"
 //         size="sm"
@@ -283,10 +283,6 @@
 //               >
 //                 <alignment.icon className="h-4 w-4" />
 //                 <span className="text-xs">{alignment.label}</span>
-//                 <span className="ml-auto text-xs text-gray-400">
-//                   {alignment.value === 'left' && '⌘ H'}
-//                   {alignment.value === 'vertical-center' && '⌘ V'}
-//                 </span>
 //               </DropdownMenuItem>
 //               {index === 2 && <DropdownMenuSeparator className="bg-gray-700" />}
 //             </div>

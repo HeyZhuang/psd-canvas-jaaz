@@ -400,6 +400,7 @@ const CanvasExcali: React.FC<CanvasExcaliProps> = ({
       theme={customTheme as Theme}
       langCode={i18n.language}
       excalidrawAPI={(api) => {
+        console.log('👇 Excalidraw API 实例:', api)
         setExcalidrawAPI(api)
       }}
       onChange={handleChange}

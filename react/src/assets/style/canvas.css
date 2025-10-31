@@ -1,75 +1,130 @@
-.excalidraw .shapes-section {
+移除隐藏形状选择部分的规则
+/* .excalidraw .shapes-section {
   display: none !important;
-}
+} */
 
-/* 隐藏Excalidraw自带的原生弹框工具栏 */
-.excalidraw .excalidraw-contextMenu {
+/* 移除隐藏Excalidraw自带的原生弹框工具栏的规则 */
+/* .excalidraw .excalidraw-contextMenu {
   display: none !important;
-}
+} */
 
-/* 隐藏选中元素时弹出的属性工具栏 */
-.excalidraw .ToolIcon__floating {
+/* 移除隐藏选中元素时弹出的属性工具栏的规则 */
+/* .excalidraw .ToolIcon__floating {
   display: none !important;
-}
+} */
 
-/* 隐藏浮动工具栏容器 */
-.excalidraw .layer-ui__wrapper__footer-center {
+/* 移除隐藏浮动工具栏容器的规则 */
+/* .excalidraw .layer-ui__wrapper__footer-center {
   display: none !important;
-}
+} */
 
-/* 隐藏选中元素时的快捷操作栏 */
-.excalidraw .App-menu_bottom__left {
+/* 移除隐藏选中元素时的快捷操作栏的规则 */
+/* .excalidraw .App-menu_bottom__left {
   display: none !important;
-}
+} */
 
-/* 隐藏形状属性栏（描边、字体等） */
-.excalidraw .excalidraw-floating-toolbar {
+/* 移除隐藏形状属性栏（描边、字体等）的规则 */
+/* .excalidraw .excalidraw-floating-toolbar {
   display: none !important;
-}
+} */
 
-/* 隐藏所有弹出的属性面板 */
-.excalidraw .popover.popover--align-start {
+/* 移除隐藏所有弹出的属性面板的规则 */
+/* .excalidraw .popover.popover--align-start {
   display: none !important;
-}
+} */
 
-/* 隐藏工具栏中的颜色选择器等弹出面板 */
-.excalidraw .color-picker-popover {
+/* 移除隐藏工具栏中的颜色选择器等弹出面板的规则 */
+/* .excalidraw .color-picker-popover {
   display: none !important;
-}
+} */
 
-/* 隐藏文字工具的字体选择面板 */
-.excalidraw .text-properties {
+/* 移除隐藏文字工具的字体选择面板的规则 */
+/* .excalidraw .text-properties {
   display: none !important;
-}
+} */
 
-/* 隐藏点击工具栏按钮时的所有弹出层 */
-.excalidraw .Island {
+/* 移除隐藏点击工具栏按钮时的所有弹出层的规则 */
+/* .excalidraw .Island {
   display: none !important;
-}
+} */
 
 /* 但保留主菜单栏 */
-.excalidraw .App-menu__left .Island {
+/* .excalidraw .App-menu__left .Island {
   display: flex !important;
-}
+} */
 
-/* 隐藏底部工具栏中的所有弹出内容 */
-.excalidraw .App-menu_bottom .Island {
+/* 移除隐藏底部工具栏中的所有弹出内容的规则 */
+/* .excalidraw .App-menu_bottom .Island {
   display: none !important;
-}
+} */
 
-/* 隐藏所有工具提示和浮动选项 */
-.excalidraw [role="dialog"] {
+/* 移除隐藏所有工具提示和浮动选项的规则 */
+/* .excalidraw [role="dialog"] {
   display: none !important;
-}
+} */
 
-/* 隐藏形状库面板 */
-.excalidraw .library-menu-items-container {
+/* 移除隐藏形状库面板的规则 */
+/* .excalidraw .library-menu-items-container {
   display: none !important;
-}
+} */
 
 /* Conditionally hide left toolbar panel when embeddable is selected */
-.excalidraw.hide-left-panel .App-menu__left {
+/* .excalidraw.hide-left-panel .App-menu__left {
   display: none !important;
+} */
+
+/* 
+/* 自定义工具栏样式 */
+.excalidraw-custom {
+  /* 调整整体布局 */
+  /* .excalidraw .App-menu_top {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+  } */
+
+  /* 隐藏原来的侧边工具栏 */
+  /* .excalidraw .App-toolbar {
+    display: none !important;
+  } */
+
+  /* 调整画布位置，为顶部工具栏留出空间 */
+  /* .excalidraw .excalidraw-container {
+    margin-top: 60px;
+    height: calc(100vh - 60px) !important;
+  } */
+
+  /* 工具栏内容水平排列 */
+  /* .excalidraw .App-menu_top .Stack {
+    flex-direction: row;
+    gap: 8px;
+  } */
+
+  /* 工具栏按钮样式调整 */
+  /* .excalidraw .App-menu_top .ToolIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+  } */
+
+  /* 颜色选择器调整 */
+  /* .excalidraw .App-menu_top .color-picker-container {
+    position: relative;
+    display: inline-block;
+  } */
+
+  /* 确保弹出菜单正确显示 */
+  /* .excalidraw .popover {
+    z-index: 1001;
+  } */
 }
 
 /* Video overlay styles */
@@ -88,38 +143,20 @@
   pointer-events: auto;
 }
 
-.excalidraw .Stack.Stack_vertical.App-menu_top__left>div {
-  display: none !important;
-}
-
-.ToolIcon__keybinding {
-  display: none !important;
-}
-
-/* Enable embeddable tool for video integration */
-/* .excalidraw .dropdown-menu .dropdown-menu-item[data-testid='toolbar-embeddable'] {
-  display: none !important;
-} */
-
-.excalidraw .dropdown-menu .dropdown-menu-item[data-testid='toolbar-laser']+div {
-  display: none !important;
-}
-
-.excalidraw .layer-ui__wrapper__top-right {
-  display: none !important;
-}
-
+/* 隐藏顶部工具栏 */
 .excalidraw .FixedSideContainer.FixedSideContainer_side_top.App-top-bar {
   display: none !important;
 }
 
-.excalidraw .layer-ui__wrapper__footer.App-menu.App-menu_bottom {
+/* 移除隐藏底部工具栏的规则 */
+/* .excalidraw .layer-ui__wrapper__footer.App-menu.App-menu_bottom {
   display: none !important;
-}
+} */
 
-.excalidraw .App-bottom-bar {
+/* 移除隐藏底部栏的规则 */
+/* .excalidraw .App-bottom-bar {
   display: none !important;
-}
+} */
 
 .scroll-back-to-content {
   bottom: 80px !important;
@@ -182,11 +219,16 @@
   filter: none !important;
 }
 
+/* 隐藏顶部菜单栏 */
 .excalidraw-wrapper .excalidraw.theme--dark .App-menu_top,
 .excalidraw-wrapper .excalidraw.theme--dark .App-menu_bottom,
 .excalidraw-wrapper .excalidraw.theme--dark .App-menu_left,
 .excalidraw-wrapper .excalidraw.theme--dark .App-menu_right {
   filter: none !important;
+}
+
+.excalidraw-wrapper .excalidraw.theme--dark .App-menu_top {
+  display: none !important;
 }
 
 .excalidraw-wrapper .excalidraw.theme--dark .layer-ui__wrapper {
@@ -262,9 +304,9 @@
 }
 
 /* 字体选择功能样式 */
-.excalidraw {
+/* .excalidraw {
   font-family: var(--excalidraw-font-family, 'Arial') !important;
-}
+} */
 
 /* 确保文本元素使用选择的字体 */
 .excalidraw .excalidraw-element[data-type="text"] {
