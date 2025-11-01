@@ -140,8 +140,14 @@ async def arrange_layers(request: Request):
         logger.error(f"HTTP错误: {he.detail}")
         raise he
     except Exception as e:
-        logger.error(f"图层排列失败: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"图层排列失败: {str(e)}")
+        import traceback
+        error_trace = traceback.format_exc()
+        logger.error(f"图层排列失败: {e}\n{error_trace}")
+        # 提供更详细的错误信息
+        error_detail = str(e)
+        if "API密钥" in error_detail or "api_key" in error_detail.lower() or "GEMINI_API_KEY" in error_detail:
+            error_detail = "需要配置Gemini API密钥，请设置GEMINI_API_KEY环境变量或在请求中提供apiKey参数"
+        raise HTTPException(status_code=500, detail=f"图层排列失败: {error_detail}")
 
 @router.get("/arrangement/health")
 async def health_check():

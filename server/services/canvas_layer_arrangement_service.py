@@ -73,21 +73,45 @@ class CanvasLayerArrangementService:
         try:
             # 首先尝试从环境变量读取
             api_key = os.environ.get("GEMINI_API_KEY")
-            if api_key and api_key != "AIzaSyBZKqCqcyCrqmbx6RFJFQe-E8spoKD7xK4":
-                return api_key
+            if api_key and api_key.strip() and api_key != "AIzaSyBZKqCqcyCrqmbx6RFJFQe-E8spoKD7xK4":
+                logger.info("从环境变量读取到API密钥")
+                return api_key.strip()
             
             # 尝试从config.env文件读取
-            # 从server目录向上两级到项目根目录
-            config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "config.env")
-            if os.path.exists(config_path):
-                with open(config_path, 'r', encoding='utf-8') as f:
-                    for line in f:
-                        line = line.strip()
-                        if line.startswith('GEMINI_API_KEY=') and not line.startswith('#'):
-                            api_key = line.split('=', 1)[1].strip()
-                            if api_key and api_key != "AIzaSyBZKqCqcyCrqmbx6RFJFQe-E8spoKD7xK4":
-                                return api_key
+            # 尝试多个可能的路径
+            possible_paths = [
+                # 从server/services向上三级到psd-canvas-jaaz目录
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "config.env"),
+                # 从server/services向上四级到项目根目录（cckz）
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "config.env"),
+                # 直接尝试项目根目录
+                os.path.join(os.path.expanduser("~"), "cckz", "config.env"),
+                # 尝试当前工作目录的config.env
+                os.path.join(os.getcwd(), "config.env"),
+            ]
             
+            for config_path in possible_paths:
+                if os.path.exists(config_path):
+                    logger.info(f"尝试从配置文件读取API密钥: {config_path}")
+                    try:
+                        with open(config_path, 'r', encoding='utf-8') as f:
+                            for line in f:
+                                line = line.strip()
+                                # 跳过注释行
+                                if line.startswith('#'):
+                                    continue
+                                if line.startswith('GEMINI_API_KEY='):
+                                    api_key = line.split('=', 1)[1].strip()
+                                    # 去除可能的引号
+                                    api_key = api_key.strip('"').strip("'")
+                                    if api_key and api_key != "AIzaSyBZKqCqcyCrqmbx6RFJFQe-E8spoKD7xK4":
+                                        logger.info(f"成功从配置文件读取API密钥: {config_path}")
+                                        return api_key
+                    except Exception as e:
+                        logger.warning(f"读取配置文件失败 {config_path}: {e}")
+                        continue
+            
+            logger.warning("未找到有效的API密钥配置")
             return None
         except Exception as e:
             logger.warning(f"从配置文件读取API密钥失败: {e}")
@@ -240,24 +264,45 @@ class CanvasLayerArrangementService:
             API响应文本
         """
         try:
+            from google.genai import types
+            
             # 创建客户端实例
             client = genai.Client(api_key=self.api_key)
             
-            # 生成内容
-            response = client.models.generate_content(
-                model=self.model,
-                contents=prompt,
-                config={
-                    "temperature": temperature,
-                    "max_output_tokens": max_tokens,
-                }
+            # 构建内容
+            contents = [
+                types.Content(
+                    role="user",
+                    parts=[
+                        types.Part.from_text(text=prompt)
+                    ],
+                ),
+            ]
+            
+            # 配置生成参数
+            generate_content_config = types.GenerateContentConfig(
+                temperature=temperature,
+                max_output_tokens=max_tokens,
             )
             
-            logger.info(f"Gemini API调用完成,{response.text}")
-            return response.text
+            # 生成内容（非流式）
+            response_text = ""
+            for chunk in client.models.generate_content_stream(
+                model=self.model,
+                contents=contents,
+                config=generate_content_config,
+            ):
+                if hasattr(chunk, 'text') and chunk.text:
+                    response_text += chunk.text
+            
+            if not response_text:
+                raise ValueError("Gemini API返回的响应中没有文本内容")
+            
+            logger.info(f"Gemini API调用完成，响应长度: {len(response_text)}")
+            return response_text
             
         except Exception as e:
-            logger.error(f"Gemini API调用失败: {e}")
+            logger.error(f"Gemini API调用失败: {e}", exc_info=True)
             raise
     
     def parse_gemini_response(self, response_text: str) -> List[Dict[str, Any]]:
