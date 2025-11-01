@@ -1,0 +1,441 @@
+#!/usr/bin/env python3
+"""
+Gemini PSD自動縮放服務
+整合Gemini 2.5 Pro API進行PSD圖層智能縮放
+"""
+
+import base64
+import json
+import os
+import re
+from pathlib import Path
+from typing import Dict, List, Any, Optional
+from google import genai
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class GeminiPSDResizeService:
+    """Gemini PSD自動縮放服務類"""
+    
+    def __init__(self, api_key: Optional[str] = None):
+        """
+        初始化服務
+        
+        Args:
+            api_key: Gemini API密鑰，如果不提供則從環境變量或配置文件讀取
+        """
+        self.api_key = api_key or self._load_api_key_from_config()
+        if not self.api_key:
+            raise ValueError("需要提供Gemini API密鑰，通過參數、GEMINI_API_KEY環境變量或config.env文件")
+        
+        # 设置API密钥
+        os.environ["GOOGLE_API_KEY"] = self.api_key
+        self.model = "gemini-2.5-pro"  # 使用Gemini 2.5 Pro模型
+    
+    def _load_api_key_from_config(self) -> Optional[str]:
+        """從配置文件加載API密鑰"""
+        try:
+            # 首先嘗試從環境變量讀取
+            api_key = os.environ.get("GEMINI_API_KEY")
+            if api_key and api_key != "AIzaSyBZKqCqcyCrqmbx6RFJFQe-E8spoKD7xK4":
+                return api_key
+            
+            # 嘗試從config.env文件讀取
+            # 从server目录向上两级到项目根目录
+            config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "config.env")
+            if os.path.exists(config_path):
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith('GEMINI_API_KEY=') and not line.startswith('#'):
+                            api_key = line.split('=', 1)[1].strip()
+                            if api_key and api_key != "AIzaSyBZKqCqcyCrqmbx6RFJFQe-E8spoKD7xK4":
+                                return api_key
+            
+            return None
+        except Exception as e:
+            logger.warning(f"從配置文件讀取API密鑰失敗: {e}")
+            return None
+    
+    def generate_resize_prompt(self, 
+                            layers_info: List[Dict[str, Any]], 
+                            original_width: int, 
+                            original_height: int,
+                            target_width: int, 
+                            target_height: int) -> str:
+        """
+        生成Gemini API調用的完整提示詞
+        
+        Args:
+            layers_info: 圖層信息列表
+            original_width: 原始寬度
+            original_height: 原始高度
+            target_width: 目標寬度
+            target_height: 目標高度
+            
+        Returns:
+            完整的提示詞字符串
+        """
+        
+        # 格式化圖層信息為表格
+        layer_info_text = self._format_layers_info_table(layers_info)
+        
+        prompt = f"""# PSD 圖層智能縮放任務
+
+## 🎯 任務目標
+將 PSD 文件從原始尺寸 {original_width}x{original_height} 智能縮放至目標尺寸 {target_width}x{target_height}，保持設計的視覺平衡、專業性和可讀性。
+
+## 📊 原始圖層信息
+```
+{layer_info_text}
+```
+
+## 🔧 縮放規則與策略
+
+### 1. 核心原則
+- **等比例縮放**: 所有圖層必須保持原始比例，不得變形
+- **邊界限制**: 調整後的圖層不得超出目標畫布範圍 (0,0) 到 ({target_width},{target_height})
+- **視覺層次**: 保持圖層間的視覺層次關係和重要性
+- **內容完整性**: 確保所有重要內容（文字、產品、標誌）完整可見
+- **避免重疊**: 特別注意文字與產品/圖像之間的重疊問題
+- **美學平衡**: 保持整體設計的美觀和專業性
+
+### 2. 圖層類型處理策略
+
+#### 🖼️ 背景圖層 (Background)
+- **像素背景**: 根據目標尺寸進行居中裁切或等比縮放
+- **純色背景**: 直接擴展至目標尺寸
+- **漸變背景**: 保持漸變方向，調整至目標尺寸
+
+#### 📝 文字圖層 (Text)
+- **優先級**: 最高優先級，確保完全可見
+- **縮放策略**: 根據畫布縮放比例調整字體大小
+- **位置調整**: 避免與其他元素重疊，保持可讀性
+- **最小尺寸**: 確保文字在目標尺寸下仍然清晰可讀
+
+#### 🛍️ 產品圖像 (Product)
+- **完整性**: 確保產品完整展示，不被裁切
+- **比例保持**: 嚴格保持原始寬高比
+- **位置優化**: 根據目標尺寸重新定位，避免與文字重疊
+
+#### 🎨 裝飾元素 (Decoration)
+- **次要優先級**: 在保證主要內容的前提下調整
+- **比例縮放**: 等比例縮放至合適大小
+- **位置調整**: 保持與主要元素的相對位置關係
+
+#### 📐 形狀圖層 (Shape)
+- **矢量保持**: 保持形狀的幾何特性
+- **比例縮放**: 等比例調整大小
+- **位置重排**: 根據新畫布尺寸重新定位
+
+### 3. 智能調整算法
+
+#### 📏 縮放比例計算
+```
+縮放比例 = min(目標寬度/原始寬度, 目標高度/原始高度)
+```
+
+#### 🎯 位置調整策略
+1. **中心對齊**: 主要元素優先居中對齊
+2. **邊距保持**: 保持適當的邊距比例
+3. **重疊檢測**: 自動檢測並避免元素重疊
+4. **視覺平衡**: 確保整體視覺平衡
+
+#### 🔍 質量保證檢查
+- 所有圖層都在目標畫布範圍內
+- 文字清晰可讀，無裁切
+- 產品完整展示
+- 無元素重疊
+- 保持設計美學
+
+## 📋 輸出格式要求
+
+請為每個圖層提供新的坐標信息，使用以下JSON格式：
+
+```json
+[
+  {{
+    "id": 圖層ID,
+    "name": "圖層名稱",
+    "type": "圖層類型",
+    "level": 圖層層級,
+    "visible": true/false,
+    "original_coords": {{
+      "left": 原始左邊界,
+      "top": 原始上邊界,
+      "right": 原始右邊界,
+      "bottom": 原始下邊界
+    }},
+    "new_coords": {{
+      "left": 新左邊界,
+      "top": 新上邊界,
+      "right": 新右邊界,
+      "bottom": 新下邊界
+    }},
+    "scale_factor": 縮放比例,
+    "adjustment_reason": "調整原因說明",
+    "quality_check": "質量檢查結果",
+    "warnings": ["潛在問題警告"]
+  }}
+]
+```
+
+## ⚠️ 重要注意事項
+
+1. **JSON格式**: 直接輸出JSON數組，不要包含markdown代碼塊標記
+2. **數據完整性**: 確保所有圖層都有對應的調整信息
+3. **邊界檢查**: 所有坐標值必須在 [0, {target_width}] x [0, {target_height}] 範圍內
+4. **比例保持**: 新尺寸必須保持原始寬高比
+5. **可見性**: 保持原始圖層的visible屬性
+6. **錯誤處理**: 如果某個圖層無法調整，請在warnings中說明原因
+
+## 🎨 設計美學要求
+
+- **視覺層次**: 保持重要元素在前景，次要元素在背景
+- **色彩平衡**: 確保調整後色彩分布均勻
+- **空間利用**: 合理利用目標畫布空間
+- **專業外觀**: 保持商業設計的專業性和美觀性
+
+請基於以上規則和策略，為每個圖層生成最優的縮放和位置調整方案。"""
+
+        return prompt
+    
+    def _format_layers_info_table(self, layers_info: List[Dict[str, Any]]) -> str:
+        """格式化圖層信息為表格形式"""
+        lines = []
+        
+        # 表頭
+        header = f"{'ID':<5} {'層級':<5} {'圖層名稱':<30} {'類型':<15} {'可見':<6} {'位置(left,top,right,bottom)':<40} {'大小(width×height)':<20}"
+        lines.append(header)
+        lines.append("-" * 130)
+        
+        # 圖層數據
+        for info in layers_info:
+            indent = "  " * info.get('level', 0)
+            name = f"{indent}{info['name']}"
+            position = f"({info['left']}, {info['top']}, {info['right']}, {info['bottom']})"
+            size = f"{info['width']}×{info['height']}"
+            visible = "是" if info.get('visible', True) else "否"
+            
+            line = f"{info['id']:<5} {info.get('level', 0):<5} {name:<30} {info['type']:<15} {visible:<6} {position:<40} {size:<20}"
+            lines.append(line)
+        
+        return "\n".join(lines)
+    
+    async def call_gemini_api(self, 
+                            prompt: str, 
+                            image_base64: str,
+                            temperature: float = 0.1,
+                            max_tokens: int = 32000) -> str:
+        """
+        調用Gemini API
+        
+        Args:
+            prompt: 提示詞
+            image_base64: 圖像的base64編碼
+            temperature: 溫度參數
+            max_tokens: 最大輸出token數
+            
+        Returns:
+            API響應文本
+        """
+        try:
+            import base64
+            
+            # 創建模型實例
+            model = genai.GenerativeModel(self.model)
+            
+            # 準備內容
+            image_data = base64.b64decode(image_base64)
+            
+            # 生成內容
+            response = model.generate_content(
+                [prompt, {"mime_type": "image/png", "data": image_data}],
+                generation_config={
+                    "temperature": temperature,
+                    "max_output_tokens": max_tokens,
+                }
+            )
+            
+            logger.info("Gemini API調用完成")
+            return response.text
+            
+        except Exception as e:
+            logger.error(f"Gemini API調用失敗: {e}")
+            raise
+    
+    def parse_gemini_response(self, response_text: str) -> List[Dict[str, Any]]:
+        """
+        解析Gemini的JSON響應
+        
+        Args:
+            response_text: API響應文本
+            
+        Returns:
+            解析後的圖層調整信息列表
+        """
+        logger.info("正在解析Gemini響應...")
+        
+        # 方法1: 直接解析
+        try:
+            data = json.loads(response_text.strip())
+            logger.info("成功解析JSON響應")
+            return data
+        except json.JSONDecodeError:
+            pass
+        
+        # 方法2: 提取代碼塊中的JSON
+        json_pattern = r'```(?:json)?\s*(\[[\s\S]*?\])\s*```'
+        matches = re.findall(json_pattern, response_text)
+        
+        if matches:
+            try:
+                data = json.loads(matches[0])
+                logger.info("從代碼塊中成功提取JSON")
+                return data
+            except json.JSONDecodeError:
+                pass
+        
+        # 方法3: 查找第一個 [ 到最後一個 ] 之間的內容
+        start_idx = response_text.find('[')
+        end_idx = response_text.rfind(']')
+        
+        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+            try:
+                json_str = response_text[start_idx:end_idx+1]
+                data = json.loads(json_str)
+                logger.info("通過查找邊界成功提取JSON")
+                return data
+            except json.JSONDecodeError:
+                pass
+        
+        # 如果都失敗了，保存原始響應並報錯
+        logger.error("無法解析Gemini響應為JSON格式")
+        raise ValueError(f"無法解析Gemini響應為JSON格式。原始響應: {response_text[:500]}...")
+    
+    async def resize_psd_layers(self, 
+                              layers_info: List[Dict[str, Any]],
+                              detection_image_path: str,
+                              original_width: int,
+                              original_height: int,
+                              target_width: int,
+                              target_height: int) -> List[Dict[str, Any]]:
+        """
+        完整的PSD圖層縮放流程
+        
+        Args:
+            layers_info: 圖層信息列表
+            detection_image_path: 檢測框圖像路徑
+            original_width: 原始寬度
+            original_height: 原始高度
+            target_width: 目標寬度
+            target_height: 目標高度
+            
+        Returns:
+            調整後的圖層信息列表
+        """
+        try:
+            # 生成提示詞
+            prompt = self.generate_resize_prompt(
+                layers_info, original_width, original_height, 
+                target_width, target_height
+            )
+            
+            # 讀取檢測框圖像並轉換為base64
+            with open(detection_image_path, 'rb') as f:
+                image_data = f.read()
+            image_base64 = base64.b64encode(image_data).decode('utf-8')
+            
+            # 調用Gemini API
+            response_text = await self.call_gemini_api(prompt, image_base64)
+            
+            # 解析響應
+            new_positions = self.parse_gemini_response(response_text)
+            
+            logger.info(f"成功生成 {len(new_positions)} 個圖層的調整方案")
+            return new_positions
+            
+        except Exception as e:
+            logger.error(f"PSD圖層縮放失敗: {e}")
+            raise
+
+
+# 使用示例
+async def example_usage():
+    """使用示例"""
+    # 初始化服務
+    service = GeminiPSDResizeService()
+    
+    # 示例圖層信息
+    layers_info = [
+        {
+            'id': 0,
+            'name': '背景',
+            'type': 'pixel',
+            'level': 0,
+            'visible': True,
+            'left': 0,
+            'top': 0,
+            'right': 1200,
+            'bottom': 800,
+            'width': 1200,
+            'height': 800
+        },
+        {
+            'id': 1,
+            'name': '產品圖片',
+            'type': 'pixel',
+            'level': 0,
+            'visible': True,
+            'left': 100,
+            'top': 150,
+            'right': 500,
+            'bottom': 450,
+            'width': 400,
+            'height': 300
+        },
+        {
+            'id': 2,
+            'name': '標題文字',
+            'type': 'text',
+            'level': 0,
+            'visible': True,
+            'left': 600,
+            'top': 200,
+            'right': 1100,
+            'bottom': 280,
+            'width': 500,
+            'height': 80
+        }
+    ]
+    
+    # 調用縮放服務
+    try:
+        new_positions = await service.resize_psd_layers(
+            layers_info=layers_info,
+            detection_image_path="detection.png",
+            original_width=1200,
+            original_height=800,
+            target_width=800,
+            target_height=600
+        )
+        
+        print("縮放結果:")
+        for pos in new_positions:
+            print(f"圖層 {pos['id']}: {pos['name']}")
+            print(f"  原始位置: {pos['original_coords']}")
+            print(f"  新位置: {pos['new_coords']}")
+            print(f"  縮放比例: {pos.get('scale_factor', 'N/A')}")
+            print(f"  調整原因: {pos.get('adjustment_reason', 'N/A')}")
+            print()
+            
+    except Exception as e:
+        print(f"錯誤: {e}")
+
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(example_usage())
+

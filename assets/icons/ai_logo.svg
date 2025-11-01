@@ -1,0 +1,132 @@
+<svg width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- 背景光暈漸變 -->
+        <radialGradient id="bgGlow2" cx="50%" cy="50%">
+            <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.15" />
+            <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:0.08" />
+            <stop offset="100%" style="stop-color:#ec4899;stop-opacity:0" />
+        </radialGradient>
+        
+        <!-- 外層環漸變 -->
+        <linearGradient id="ringOuter2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:1" />
+            <stop offset="25%" style="stop-color:#3b82f6;stop-opacity:1" />
+            <stop offset="50%" style="stop-color:#2563eb;stop-opacity:1" />
+            <stop offset="75%" style="stop-color:#3b82f6;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#93c5fd;stop-opacity:1" />
+        </linearGradient>
+        
+        <!-- 中層環漸變 -->
+        <linearGradient id="ringMid2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#fcd34d;stop-opacity:1" />
+            <stop offset="30%" style="stop-color:#fbbf24;stop-opacity:1" />
+            <stop offset="60%" style="stop-color:#f59e0b;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#fde68a;stop-opacity:1" />
+        </linearGradient>
+        
+        <!-- 內層環漸變 -->
+        <linearGradient id="ringInner2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#f472b6;stop-opacity:1" />
+            <stop offset="30%" style="stop-color:#ec4899;stop-opacity:1" />
+            <stop offset="60%" style="stop-color:#db2777;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#f9a8d4;stop-opacity:1" />
+        </linearGradient>
+        
+        <!-- 中心核心漸變 -->
+        <radialGradient id="core2" cx="50%" cy="50%">
+            <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+            <stop offset="40%" style="stop-color:#60a5fa;stop-opacity:0.9" />
+            <stop offset="70%" style="stop-color:#3b82f6;stop-opacity:0.7" />
+            <stop offset="100%" style="stop-color:#1e40af;stop-opacity:0.5" />
+        </radialGradient>
+        
+        <!-- 外層環陰影 -->
+        <filter id="shadowOuter2">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="5"/>
+            <feOffset dx="0" dy="6" result="offsetblur"/>
+            <feComponentTransfer>
+                <feFuncA type="linear" slope="0.4"/>
+            </feComponentTransfer>
+            <feMerge>
+                <feMergeNode/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        
+        <!-- 中層環發光 -->
+        <filter id="glowMid2">
+            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+            <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        
+        <!-- 內層環發光 -->
+        <filter id="glowInner2">
+            <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+            <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        
+        <!-- 中心核心發光 -->
+        <filter id="glowCore2">
+            <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+            <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        
+        <!-- 高光效果 -->
+        <filter id="highlight2">
+            <feGaussianBlur stdDeviation="2"/>
+        </filter>
+    </defs>
+    
+    <!-- 背景光暈層 -->
+    <circle cx="80" cy="80" r="70" fill="url(#bgGlow2)"/>
+    
+    <!-- 外層大環 - 藍色主環 -->
+    <circle cx="80" cy="80" r="52" fill="none" stroke="url(#ringOuter2)" stroke-width="14" 
+            stroke-linecap="round" filter="url(#shadowOuter2)" opacity="0.95"/>
+    
+    <!-- 外層環高光 -->
+    <circle cx="80" cy="80" r="52" fill="none" stroke="#ffffff" stroke-width="2" 
+            stroke-linecap="round" opacity="0.3" stroke-dasharray="50 200" transform="rotate(-20 80 80)"/>
+    
+    <!-- 中層環 - 金色 -->
+    <circle cx="80" cy="80" r="40" fill="none" stroke="url(#ringMid2)" stroke-width="11" 
+            stroke-dasharray="90 170" stroke-linecap="round" filter="url(#glowMid2)" 
+            opacity="0.92" transform="rotate(-35 80 80)"/>
+    
+    <!-- 中層環高光 -->
+    <circle cx="80" cy="80" r="40" fill="none" stroke="#ffffff" stroke-width="1.5" 
+            stroke-linecap="round" opacity="0.4" stroke-dasharray="30 230" transform="rotate(-35 80 80)"/>
+    
+    <!-- 內層環 - 粉紅色 -->
+    <circle cx="80" cy="80" r="28" fill="none" stroke="url(#ringInner2)" stroke-width="9" 
+            stroke-dasharray="65 120" stroke-linecap="round" filter="url(#glowInner2)" 
+            opacity="0.90" transform="rotate(40 80 80)"/>
+    
+    <!-- 內層環高光 -->
+    <circle cx="80" cy="80" r="28" fill="none" stroke="#ffffff" stroke-width="1.5" 
+            stroke-linecap="round" opacity="0.5" stroke-dasharray="20 165" transform="rotate(40 80 80)"/>
+    
+    <!-- 中心核心外層 -->
+    <circle cx="80" cy="80" r="16" fill="url(#core2)" filter="url(#glowCore2)" opacity="0.95"/>
+    
+    <!-- 中心核心內層 -->
+    <circle cx="80" cy="80" r="10" fill="url(#ringOuter2)" filter="url(#glowCore2)" opacity="0.8"/>
+    
+    <!-- 中心高光點 -->
+    <circle cx="80" cy="80" r="6" fill="#ffffff" opacity="1" filter="url(#highlight2)"/>
+    
+    <!-- 動態光點裝飾 -->
+    <circle cx="132" cy="80" r="3" fill="#60a5fa" opacity="0.8" filter="url(#glowMid2)"/>
+    <circle cx="48" cy="80" r="3" fill="#f472b6" opacity="0.8" filter="url(#glowMid2)"/>
+    <circle cx="80" cy="28" r="3" fill="#fcd34d" opacity="0.8" filter="url(#glowMid2)"/>
+    <circle cx="80" cy="132" r="3" fill="#60a5fa" opacity="0.8" filter="url(#glowMid2)"/>
+</svg>

@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+toml
+openai
+ollama
+httpx
+aiohttp
+requests
+Pillow
+nanoid
+python-multipart
+aiofiles
+certifi
+python-socketio==5.13.0
+sqlalchemy # For database operations
